@@ -1,0 +1,64 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Noto Sans', ui-sans-serif, system-ui, sans-serif;
+
+  /* Palette guideline (offset kecil boleh selama masih se-krom) */
+  --color-brand-50: #f3f5ff;
+  --color-brand-100: #e4eaff;
+  --color-brand-200: #d6dcf0; /* background input disabled */
+  --color-brand-300: #919ecc;
+  --color-brand-500: #4e5e99;
+  --color-brand-700: #202f66;
+  --color-brand-900: #060f33;
+
+  /* Skala heading: 1.25x per level dari body text */
+  --text-h6: 1.25rem;
+  --text-h5: 1.5625rem;
+  --text-h4: 1.953rem;
+  --text-h3: 2.441rem;
+  --text-h2: 3.052rem;
+  --text-h1: 3.815rem;
+}
+
+@layer base {
+  /* Body text: mobile & tablet 16px, desktop 18px. Semua ukuran rem ikut terskala. */
+  html {
+    font-size: 16px;
+    @variant lg {
+      font-size: 18px;
+    }
+  }
+
+  body {
+    @apply bg-white font-sans text-base text-brand-900;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-bold leading-tight;
+  }
+  h1 { @apply text-h1; }
+  h2 { @apply text-h2; }
+  h3 { @apply text-h3; }
+  h4 { @apply text-h4; }
+  h5 { @apply text-h5; }
+  h6 { @apply text-h6; }
+}
+
+/* Panah segitiga untuk <select> native */
+@utility select-arrow {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M0 0h12L6 10z' fill='%237f8cc8'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 0.75rem;
+}
+
+/* Kunci scroll halaman saat dialog modal (drawer menu) terbuka */
+html:has(dialog:modal) {
+  overflow: hidden;
+}
