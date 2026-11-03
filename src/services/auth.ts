@@ -15,6 +15,7 @@ export const GOOGLE_LOGIN_URL = `${API_URL}/auth/google/login`
 const LOGIN_ERROR_MESSAGE: Record<string, string> = {
   domain: `Gunakan akun @${ALLOWED_EMAIL_DOMAIN} untuk masuk.`,
   cancelled: 'Login dibatalkan.',
+  session: 'Sesi kamu telah berakhir. Silakan login kembali.',
 }
 
 export function loginErrorMessage(code: string | null) {

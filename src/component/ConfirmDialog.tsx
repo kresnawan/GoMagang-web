@@ -1,5 +1,6 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 import { Button } from './Button'
+import { useModalDialog } from './useModalDialog'
 
 export type ConfirmDialogProps = {
   open: boolean
@@ -27,15 +28,8 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
+  const dialogRef = useModalDialog(open)
   const titleId = useId()
-
-  useEffect(() => {
-    const dialog = dialogRef.current
-    if (!dialog) return
-    if (open && !dialog.open) dialog.showModal()
-    else if (!open && dialog.open) dialog.close()
-  }, [open])
 
   return (
     <dialog

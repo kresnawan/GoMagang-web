@@ -10,3 +10,10 @@ export const MENU_ITEMS: MenuItem[] = [
   { label: 'Pendaftaran', to: '/pendaftaran' },
   { label: 'Konversi MK', to: '/konversi-mk' },
 ]
+
+export const TIM_MB_MENU_ITEMS: MenuItem[] = [
+  { label: 'Pendaftar', to: '/tim-mb/pendaftar' },
+  { label: 'Katalog Posisi', to: '/tim-mb/katalog' },
+  { label: 'Perusahaan Mitra', to: '/tim-mb/perusahaan' },
+  { label: 'Periode', to: '/tim-mb/periode' },
+]

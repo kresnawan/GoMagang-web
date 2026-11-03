@@ -1,23 +1,26 @@
 import { NavLink } from 'react-router'
 import { cn } from '../../component/cn'
 import { Logo } from './Logo'
-import { MENU_ITEMS } from './menu'
+import type { MenuItem } from './menu'
 
 export type SidebarProps = {
+  items: MenuItem[]
+  /** Tujuan link logo */
+  homePath: string
   /** Dipanggil saat menu diklik, mis. untuk menutup drawer di mobile */
   onNavigate?: () => void
   className?: string
 }
 
 /** Isi menu kiri. Dipakai di sidebar desktop dan di drawer mobile/tablet */
-export function Sidebar({ onNavigate, className }: SidebarProps) {
+export function Sidebar({ items, homePath, onNavigate, className }: SidebarProps) {
   return (
     <nav aria-label="Menu utama" className={cn('flex h-full flex-col bg-white', className)}>
       <div className="flex h-20 items-center px-5">
-        <Logo />
+        <Logo to={homePath} />
       </div>
       <ul className="">
-        {MENU_ITEMS.map((item) => (
+        {items.map((item) => (
           <li key={item.to} className="">
             <NavLink
               to={item.to}

@@ -1,0 +1,83 @@
+import { useEffect } from 'react'
+import { useFetcher } from 'react-router'
+import { DropDown, FormDialog, FormField, TextArea, TextInput } from '../../../component'
+import type { PeriodePendaftaran, PerusahaanMitra } from '../../../services/posisiMagang'
+import { labelPeriode } from '../periode'
+import type { action } from './route'
+
+export type TambahPosisiDialogProps = {
+  periode: PeriodePendaftaran[]
+  perusahaan: PerusahaanMitra[]
+  /** Periode yang terpilih di halaman, jadi nilai awal dropdown periode */
+  idPeriodeAwal: string | undefined
+  onClose: () => void
+  /** Dipanggil setelah posisi tersimpan, dengan periode posisi tersebut */
+  onSuccess: (idPeriode: string) => void
+}
+
+/** Dipasang hanya saat dibuka, sehingga form selalu mulai kosong */
+export function TambahPosisiDialog({ periode, perusahaan, idPeriodeAwal, onClose, onSuccess }: TambahPosisiDialogProps) {
+  const fetcher = useFetcher<typeof action>()
+  const isSaving = fetcher.state !== 'idle'
+  const result = fetcher.state === 'idle' ? fetcher.data : undefined
+
+  useEffect(() => {
+    if (result?.ok) onSuccess(result.idPeriode)
+  }, [result, onSuccess])
+
+  return (
+    <FormDialog
+      open
+      title="Tambah Posisi Magang"
+      submitLabel={isSaving ? 'Menambahkan...' : 'Tambah'}
+      cancelLabel="Batal"
+      loading={isSaving}
+      onCancel={onClose}
+      onSubmit={(formData) => fetcher.submit(formData, { method: 'post' })}
+    >
+      <FormField label="Nama Posisi" htmlFor="posisi">
+        <TextInput id="posisi" name="posisi" required placeholder="mis. Frontend Developer Intern" />
+      </FormField>
+
+      <FormField label="Nama Perusahaan" htmlFor="idPerusahaan">
+        <DropDown id="idPerusahaan" name="idPerusahaan" required defaultValue="">
+          <option value="" disabled>
+            Pilih perusahaan
+          </option>
+          {perusahaan.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.nama}
+            </option>
+          ))}
+        </DropDown>
+      </FormField>
+
+      <FormField label="Kuota" htmlFor="kuotaTotal">
+        <TextInput id="kuotaTotal" name="kuotaTotal" type="number" required min={1} step={1} inputMode="numeric" />
+      </FormField>
+
+      <FormField label="Periode" htmlFor="idPeriode">
+        <DropDown id="idPeriode" name="idPeriode" required defaultValue={idPeriodeAwal ?? ''}>
+          <option value="" disabled>
+            Pilih periode
+          </option>
+          {periode.map((item) => (
+            <option key={item.id} value={item.id}>
+              {labelPeriode(item)}
+            </option>
+          ))}
+        </DropDown>
+      </FormField>
+
+      <FormField label="Deskripsi & Persyaratan" htmlFor="deskripsiPersyaratan">
+        <TextArea id="deskripsiPersyaratan" name="deskripsiPersyaratan" required />
+      </FormField>
+
+      {result && !result.ok && (
+        <p role="alert" className="text-red-600">
+          {result.error}
+        </p>
+      )}
+    </FormDialog>
+  )
+}

@@ -38,7 +38,7 @@ let store: DataDiri = {
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-export async function getDataDiri(): Promise<DataDiri> {
+export async function getDataDiri(_signal?: AbortSignal): Promise<DataDiri> {
   await delay(600)
   return { ...store }
 }

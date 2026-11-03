@@ -3,10 +3,11 @@ import { Logo } from './Logo'
 import { ProfileMenu } from './ProfileMenu'
 
 export type NavbarProps = {
+  homePath: string
   onMenuClick: () => void
 }
 
-export function Navbar({ onMenuClick }: NavbarProps) {
+export function Navbar({ homePath, onMenuClick }: NavbarProps) {
   return (
     <header className="flex items-center gap-3 rounded-sm border border-brand-300 bg-white px-4 py-3">
       {/* Burger & logo hanya di mobile/tablet; di desktop sudah ada sidebar */}
@@ -18,7 +19,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
       >
         <MenuIcon />
       </button>
-      <Logo className="lg:hidden" />
+      <Logo to={homePath} className="lg:hidden" />
 
       <div className="ml-auto">
         <ProfileMenu />

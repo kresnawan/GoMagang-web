@@ -8,13 +8,14 @@ export const STATUS_PENDAFTARAN = [
   'Lolos Seleksi Administrasi',
   'Diterima',
   'Aktif',
+  'Selesai',
   'Tidak Lolos',
   'Batal/Mengundurkan Diri',
 ] as const
 export type StatusPendaftaran = (typeof STATUS_PENDAFTARAN)[number]
 
 /** Status akhir yang tidak dihitung dalam batas pendaftaran */
-const STATUS_SELESAI: readonly StatusPendaftaran[] = ['Tidak Lolos', 'Batal/Mengundurkan Diri']
+const STATUS_SELESAI: readonly StatusPendaftaran[] = ['Selesai', 'Tidak Lolos', 'Batal/Mengundurkan Diri']
 
 /** Jumlah maksimal pendaftaran yang masih berjalan per mahasiswa */
 export const MAX_PENDAFTARAN_BERJALAN = 2

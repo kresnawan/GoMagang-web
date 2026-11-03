@@ -1,13 +1,16 @@
 import { useEffect, useRef } from 'react'
 import { Sidebar } from './Sidebar'
+import type { MenuItem } from './menu'
 
 export type SidebarDrawerProps = {
+  items: MenuItem[]
+  homePath: string
   open: boolean
   onClose: () => void
 }
 
 /** Sidebar versi mobile & tablet: <dialog> modal yang muncul dari kiri */
-export function SidebarDrawer({ open, onClose }: SidebarDrawerProps) {
+export function SidebarDrawer({ items, homePath, open, onClose }: SidebarDrawerProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -34,7 +37,7 @@ export function SidebarDrawer({ open, onClose }: SidebarDrawerProps) {
       onClick={(event) => event.target === event.currentTarget && onClose()}
       className="m-0 h-dvh max-h-none w-72 max-w-[85vw] -translate-x-full border-0 p-0 shadow-xl transition-all transition-discrete duration-200 open:translate-x-0 starting:open:-translate-x-full backdrop:bg-brand-900/40 lg:hidden"
     >
-      <Sidebar onNavigate={onClose} />
+      <Sidebar items={items} homePath={homePath} onNavigate={onClose} />
     </dialog>
   )
 }
