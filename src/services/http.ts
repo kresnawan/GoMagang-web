@@ -1,20 +1,17 @@
 // Axios instance untuk semua request ke backend.
 //
-// Skema auth (sesuaikan bila backend berbeda — semua titik penyesuaian ada di file ini):
-// - Access token disimpan di MEMORI (bukan localStorage) dan dikirim sebagai `Authorization: Bearer`.
-// - Refresh token disimpan backend sebagai cookie HttpOnly, sehingga request memakai `withCredentials`.
-// - Jika response 401: minta access token baru ke REFRESH_ENDPOINT, lalu ulangi request semula.
+// Skema auth (mengikuti backend):
+// - Access token & refresh token disimpan backend sebagai cookie HttpOnly. Frontend tidak pernah
+//   memegang token; cookie ikut terkirim otomatis karena `withCredentials: true`.
+// - Jika response 401: panggil REFRESH_ENDPOINT (backend memasang cookie baru), lalu ulangi request.
 //   Beberapa request yang gagal bersamaan hanya memicu SATU kali refresh.
-// - Jika refresh gagal: token dihapus dan onSessionExpired dipanggil (default: ke halaman login).
-//
-// Setelah login Google, frontend belum memegang access token; request pertama akan 401 lalu
-// otomatis refresh memakai cookie dari backend, jadi tidak perlu langkah khusus.
+// - Jika refresh gagal: onSessionExpired dipanggil (default: ke halaman login).
 
 import axios, { isAxiosError, type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 
 declare module 'axios' {
   interface AxiosRequestConfig {
-    /** true: jangan coba refresh token bila request ini 401 (mis. endpoint login/logout) */
+    /** true: jangan coba refresh token bila request ini 401 */
     skipAuthRefresh?: boolean
     /** Internal: penanda request sudah diulang sekali setelah refresh */
     _retry?: boolean
@@ -24,16 +21,7 @@ declare module 'axios' {
 const API_URL: string = import.meta.env.VITE_API_URL ?? ''
 export const REFRESH_ENDPOINT = '/auth/refresh'
 
-// ---- Penyimpanan access token (memori) ----
-
-let accessToken: string | null = null
-
-export const getAccessToken = () => accessToken
-export const setAccessToken = (token: string | null) => {
-  accessToken = token
-}
-
-/** Dipanggil saat sesi tidak bisa diperpanjang. Bisa diganti, mis. dari router */
+/** Dipanggil saat sesi tidak bisa diperpanjang. Bisa diganti lewat setOnSessionExpired */
 let onSessionExpired: () => void = () => {
   window.location.assign('/login?error=session')
 }
@@ -52,27 +40,22 @@ const baseConfig = {
 
 export const api = axios.create(baseConfig)
 
-/** Instance terpisah TANPA interceptor, khusus refresh, agar 401 dari refresh tidak memicu refresh lagi */
-const refreshClient = axios.create(baseConfig)
+/**
+ * Instance TANPA interceptor untuk endpoint auth (me, refresh, logout):
+ * 401 di sini tidak memicu refresh berulang maupun redirect otomatis
+ */
+export const authClient = axios.create(baseConfig)
 
-/** Ambil access token dari response refresh. Sesuaikan dengan bentuk response backend */
-function ambilAccessToken(data: unknown): string {
-  const token = (data as { accessToken?: unknown } | null)?.accessToken
-  if (typeof token !== 'string' || !token) throw new Error('Response refresh tidak berisi accessToken')
-  return token
-}
+export const isUnauthorized = (error: unknown) => isAxiosError(error) && error.response?.status === 401
 
 // Satu promise refresh yang dipakai bersama oleh semua request yang 401 bersamaan
-let refreshPromise: Promise<string> | null = null
+let refreshPromise: Promise<void> | null = null
 
-function refreshAccessToken(): Promise<string> {
-  refreshPromise ??= refreshClient
+/** Minta backend memperpanjang sesi (cookie baru dipasang lewat response) */
+export function refreshSession(): Promise<void> {
+  refreshPromise ??= authClient
     .post(REFRESH_ENDPOINT)
-    .then((response) => {
-      const token = ambilAccessToken(response.data)
-      setAccessToken(token)
-      return token
-    })
+    .then(() => undefined)
     .finally(() => {
       refreshPromise = null
     })
@@ -80,13 +63,6 @@ function refreshAccessToken(): Promise<string> {
 }
 
 // ---- Interceptor ----
-
-api.interceptors.request.use((config) => {
-  if (accessToken && !config.headers.has('Authorization')) {
-    config.headers.set('Authorization', `Bearer ${accessToken}`)
-  }
-  return config
-})
 
 api.interceptors.response.use(
   (response) => response,
@@ -97,17 +73,14 @@ api.interceptors.response.use(
 
     if (!bisaRefresh) throw error
 
-    let token: string
     try {
-      token = await refreshAccessToken()
+      await refreshSession()
     } catch {
-      setAccessToken(null)
       onSessionExpired()
       throw error
     }
 
     original._retry = true
-    original.headers.set('Authorization', `Bearer ${token}`)
     return api(original)
   },
 )

@@ -1,35 +1,68 @@
 import {
   JENIS_KELAMIN,
   PROGRAM_STUDI,
+  type DataDiri,
   type DataDiriInput,
   type JenisKelamin,
   type ProgramStudi,
 } from '../../services/dataDiri'
 
+export const SEMESTER_MIN = 1
+export const SEMESTER_MAX = 14
+
+/** Isian form apa adanya: kolom yang dikosongkan bernilai null */
+export type DataDiriFormValues = { [K in keyof DataDiriInput]: DataDiriInput[K] | null }
+
 /** Ubah FormData dari form Data Diri menjadi objek bertipe */
-export function parseDataDiriForm(formData: FormData): DataDiriInput {
-  const get = (key: keyof DataDiriInput) => String(formData.get(key) ?? '').trim()
-  const ipk = get('ipk')
+export function parseDataDiriForm(formData: FormData): DataDiriFormValues {
+  const get = (key: keyof DataDiriInput) => String(formData.get(key) ?? '').trim() || null
+  const toNumber = (value: string | null) => (value === null ? null : Number(value))
+  const ipk = toNumber(get('ipk'))
 
   return {
     namaLengkap: get('namaLengkap'),
     nim: get('nim'),
-    jenisKelamin: get('jenisKelamin') as JenisKelamin,
-    programStudi: get('programStudi') as ProgramStudi,
-    ipk: ipk === '' ? Number.NaN : Number(ipk),
+    jenisKelamin: get('jenisKelamin') as JenisKelamin | null,
+    programStudi: get('programStudi') as ProgramStudi | null,
+    // Backend membulatkan IPK ke 2 desimal; samakan agar perbandingan perubahan akurat
+    ipk: ipk === null ? null : Math.round(ipk * 100) / 100,
+    semester: toNumber(get('semester')),
     nomorHp: get('nomorHp'),
   }
 }
 
-/** Validasi ulang di sisi action (validasi native browser bisa dilewati) */
-export function validateDataDiri(input: DataDiriInput): string | null {
-  if (!input.namaLengkap || !input.nim || !input.nomorHp) return 'Semua kolom wajib diisi.'
-  if (!JENIS_KELAMIN.includes(input.jenisKelamin)) return 'Jenis kelamin tidak valid.'
-  if (!PROGRAM_STUDI.includes(input.programStudi)) return 'Program studi tidak valid.'
-  if (!(input.ipk >= 0 && input.ipk <= 4)) return 'IPK harus di antara 0 dan 4.'
-  return null
+/**
+ * Kolom yang perlu dikirim ke backend: terisi dan berbeda dari data tersimpan.
+ * Kolom yang dibiarkan kosong tidak dikirim (backend menolak null).
+ */
+export function perubahanDataDiri(awal: DataDiri, values: DataDiriFormValues): Partial<DataDiriInput> {
+  const changes: Partial<DataDiriInput> = {}
+  for (const key of Object.keys(values) as Array<keyof DataDiriFormValues>) {
+    const value = values[key]
+    if (value !== null && !Object.is(awal[key], value)) Object.assign(changes, { [key]: value })
+  }
+  return changes
 }
 
-export function isSameDataDiri(a: DataDiriInput, b: DataDiriInput) {
-  return (Object.keys(a) as Array<keyof DataDiriInput>).every((key) => Object.is(a[key], b[key]))
+/** Validasi ulang di sisi action (validasi native browser bisa dilewati) */
+export function validateDataDiri(awal: DataDiri, values: DataDiriFormValues): string | null {
+  // Data yang sudah tersimpan hanya bisa diganti, tidak bisa dikosongkan
+  const dikosongkan = (Object.keys(values) as Array<keyof DataDiriFormValues>).some(
+    (key) => values[key] === null && awal[key] !== null,
+  )
+  if (dikosongkan) return 'Kolom yang sudah terisi tidak bisa dikosongkan.'
+
+  const { namaLengkap, nim, nomorHp, jenisKelamin, programStudi, ipk, semester } = perubahanDataDiri(awal, values)
+  if (namaLengkap !== undefined && namaLengkap.length > 255) return 'Nama lengkap maksimal 255 karakter.'
+  if (nim !== undefined && !/^[0-9]{1,15}$/.test(nim)) return 'NIM harus 1–15 digit angka.'
+  if (nomorHp !== undefined && !/^\+?[0-9]{9,15}$/.test(nomorHp)) {
+    return 'Nomor HP harus 9–15 digit angka, boleh diawali +.'
+  }
+  if (jenisKelamin !== undefined && !JENIS_KELAMIN.includes(jenisKelamin)) return 'Jenis kelamin tidak valid.'
+  if (programStudi !== undefined && !PROGRAM_STUDI.includes(programStudi)) return 'Program studi tidak valid.'
+  if (ipk !== undefined && !(ipk >= 0 && ipk <= 4)) return 'IPK harus di antara 0 dan 4.'
+  if (semester !== undefined && !(Number.isInteger(semester) && semester >= SEMESTER_MIN && semester <= SEMESTER_MAX)) {
+    return `Semester harus bilangan bulat ${SEMESTER_MIN}–${SEMESTER_MAX}.`
+  }
+  return null
 }

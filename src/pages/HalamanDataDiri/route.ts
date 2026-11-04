@@ -1,21 +1,35 @@
-import { data, type ActionFunctionArgs } from 'react-router'
+import { data, type ActionFunctionArgs, type LoaderFunctionArgs } from 'react-router'
 import { getDataDiri, updateDataDiri } from '../../services/dataDiri'
-import { parseDataDiriForm, validateDataDiri } from './form'
+import { pesanError } from '../../services/http'
+import { parseDataDiriForm, perubahanDataDiri, validateDataDiri } from './form'
 
-export async function loader() {
-  return getDataDiri()
+export async function loader({ request }: LoaderFunctionArgs) {
+  return getDataDiri(request.signal)
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const input = parseDataDiriForm(await request.formData())
+const gagal = (error: string, status: number) => data({ ok: false as const, error }, { status })
 
-  const error = validateDataDiri(input)
-  if (error) return data({ ok: false as const, error }, { status: 400 })
+export async function action({ request }: ActionFunctionArgs) {
+  const values = parseDataDiriForm(await request.formData())
+
+  let awal
+  try {
+    // Bandingkan dengan data terbaru di server, lalu kirim hanya kolom yang berubah
+    awal = await getDataDiri(request.signal)
+  } catch (err) {
+    return gagal(pesanError(err, 'Gagal memuat data terbaru. Coba lagi.'), 500)
+  }
+
+  const error = validateDataDiri(awal, values)
+  if (error) return gagal(error, 400)
+
+  const changes = perubahanDataDiri(awal, values)
+  if (Object.keys(changes).length === 0) return { ok: true as const, message: 'Tidak ada perubahan.' }
 
   try {
-    await updateDataDiri(input)
-    return { ok: true as const }
-  } catch {
-    return data({ ok: false as const, error: 'Gagal menyimpan data. Coba lagi.' }, { status: 500 })
+    await updateDataDiri(changes, request.signal)
+    return { ok: true as const, message: 'Data diri tersimpan.' }
+  } catch (err) {
+    return gagal(pesanError(err, 'Gagal menyimpan data. Coba lagi.'), 500)
   }
 }

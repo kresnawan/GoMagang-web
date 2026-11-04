@@ -52,6 +52,7 @@ export type PendaftarDetail = Pendaftar & {
   jenisKelamin: JenisKelamin
   programStudi: ProgramStudi
   ipk: number
+  semester: number
   nomorHp: string
   berkas: BerkasPendaftaran[]
   /** Urut dari yang paling lama */
@@ -139,6 +140,7 @@ const store: PendaftarDetail[] = Array.from({ length: 132 }, (_, i) => {
     jenisKelamin: JENIS_KELAMIN[i % 2],
     programStudi: PROGRAM_STUDI[i % PROGRAM_STUDI.length],
     ipk: Math.round((2.75 + ((i * 17) % 125) / 100) * 100) / 100,
+    semester: 5 + (i % 4),
     nomorHp: `08${String(1_200_000_000 + i * 7_919_311).slice(0, 10)}`,
     berkas: [
       { jenis: 'Surat Pernyataan DPA', nama: `Surat_DPA_${namaDepan}_${namaBelakang}.pdf`, ukuran: 150_000 + i * 811 },

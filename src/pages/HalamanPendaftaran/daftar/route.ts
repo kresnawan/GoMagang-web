@@ -1,33 +1,22 @@
 import type { LoaderFunctionArgs } from 'react-router'
-import {
-  BIDANG,
-  getLowonganList,
-  LOKASI,
-  SISTEM_KERJA,
-  URUTAN,
-  type LowonganFilter,
-} from '../../../services/lowongan'
+import { getPosisiList, type PosisiFilter } from '../../../services/lowongan'
+import { getPeriode } from '../../../services/periode'
 
-/** Ambil nilai param hanya jika termasuk pilihan yang valid */
-function pick<T extends string>(params: URLSearchParams, key: string, options: readonly T[]) {
-  const value = params.get(key)
-  return options.includes(value as T) ? (value as T) : undefined
-}
-
-export function parseLowonganFilter(params: URLSearchParams): LowonganFilter {
-  return {
-    q: params.get('q')?.trim() || undefined,
-    bidang: pick(params, 'bidang', BIDANG),
-    lokasi: pick(params, 'lokasi', LOKASI),
-    sistemKerja: pick(params, 'sistemKerja', SISTEM_KERJA),
-    urutkan: pick(
-      params,
-      'urutkan',
-      URUTAN.map((item) => item.value),
-    ),
-  }
+export function parsePosisiFilter(params: URLSearchParams): PosisiFilter {
+  return { q: params.get('q')?.trim() || undefined }
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  return getLowonganList(parseLowonganFilter(new URL(request.url).searchParams))
+  const filter = parsePosisiFilter(new URL(request.url).searchParams)
+
+  // Paralel: tanpa id_periode backend memakai periode berjalan (yang mulai paling akhir), sama dengan
+  // periode[0] di sini. Posisi saja tidak cukup karena [] bisa berarti "belum dibuka" atau "belum ada lowongan".
+  const [periode, posisi] = await Promise.all([
+    getPeriode(request.signal, 'berlangsung'),
+    getPosisiList(filter, request.signal),
+  ])
+
+  /** null: tidak ada periode pendaftaran yang sedang berlangsung */
+  const periodeBerjalan = periode[0] ?? null
+  return { filter, periodeBerjalan, posisi: periodeBerjalan ? posisi : [] }
 }

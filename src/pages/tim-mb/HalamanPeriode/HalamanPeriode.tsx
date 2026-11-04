@@ -3,7 +3,7 @@ import { useFetcher, useLoaderData } from 'react-router'
 import { FormDialog, FormField, TextInput } from '../../../component'
 import { cn } from '../../../component/cn'
 import { GagalMemuat, PageHeading, TambahButton } from '../components'
-import { formatWaktuPeriode, statusPeriode, type StatusPeriode } from '../periode'
+import { CATATAN_MAX, formatWaktuPeriode, LABEL_STATUS_PERIODE, type StatusPeriode } from '../periode'
 import { tableClass as t } from '../table'
 import type { action, loader } from './route'
 
@@ -39,9 +39,9 @@ function TambahPeriodeDialog({ onClose }: { onClose: () => void }) {
       onSubmit={(formData) => fetcher.submit(formData, { method: 'post' })}
     >
       <FormField label="Catatan (opsional)" htmlFor="catatan">
-        <TextInput id="catatan" name="catatan" maxLength={255} placeholder="mis. Periode Genap 2026/2027" />
+        <TextInput id="catatan" name="catatan" maxLength={CATATAN_MAX} placeholder="mis. Periode Genap 2026/2027" />
       </FormField>
-      <FormField label="Waktu Mulai" htmlFor="waktuMulai">
+      <FormField label="Waktu Mulai (WIB)" htmlFor="waktuMulai">
         <TextInput
           id="waktuMulai"
           name="waktuMulai"
@@ -51,7 +51,7 @@ function TambahPeriodeDialog({ onClose }: { onClose: () => void }) {
           onChange={(event) => setWaktuMulai(event.target.value)}
         />
       </FormField>
-      <FormField label="Waktu Tutup" htmlFor="waktuTutup">
+      <FormField label="Waktu Tutup (WIB)" htmlFor="waktuTutup">
         <TextInput id="waktuTutup" name="waktuTutup" type="datetime-local" required min={waktuMulai || undefined} />
       </FormField>
       {result && !result.ok && (
@@ -90,7 +90,7 @@ export function HalamanPeriode() {
             </thead>
             <tbody>
               {periode.map((item) => {
-                const status = statusPeriode(item)
+                const status = LABEL_STATUS_PERIODE[item.status]
                 return (
                   <tr key={item.id}>
                     <td className={t.td}>

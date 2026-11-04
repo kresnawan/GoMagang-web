@@ -83,6 +83,7 @@ function DataDiri({ detail }: { detail: PendaftarDetail }) {
           ['Jenis Kelamin', detail.jenisKelamin],
           ['Program Studi', detail.programStudi],
           ['IPK', detail.ipk.toFixed(2)],
+          ['Semester', detail.semester],
           ['Nomor HP', detail.nomorHp],
         ]}
       />

@@ -1,22 +1,27 @@
 import { createBrowserRouter, Navigate } from 'react-router'
 import App from './App'
 import { MainLayout, TimMbLayout } from './layouts/MainLayout'
+import { MemuatSesi } from './layouts/MainLayout/MemuatSesi'
 import { dasborRoute } from './pages/HalamanDasbor'
 import { dataDiriRoute } from './pages/HalamanDataDiri'
 import { detailPendaftaranRoute } from './pages/HalamanDetailPendaftaran'
 import { konversiMkRoute } from './pages/HalamanKonversiMK'
 import { loginRoute } from './pages/HalamanLogin'
-import { daftarLowonganRoute, formPendaftaranRoute } from './pages/HalamanPendaftaran'
+import { daftarLowonganRoute, formPendaftaranRoute, wajibDataDiriLengkap } from './pages/HalamanPendaftaran'
 import { katalogRoute } from './pages/tim-mb/HalamanKatalog'
 import { pendaftarRoute } from './pages/tim-mb/HalamanPendaftar'
 import { detailPendaftarRoute } from './pages/tim-mb/HalamanPendaftar/detail'
 import { periodeRoute } from './pages/tim-mb/HalamanPeriode'
 import { perusahaanRoute } from './pages/tim-mb/HalamanPerusahaan'
+import { loginLoader, sesiLoader, wajibPeran } from './routeGuard'
 
 export const router = createBrowserRouter([
   {
     path: '/',
     Component: MainLayout,
+    middleware: [wajibPeran('mahasiswa')],
+    loader: sesiLoader,
+    HydrateFallback: MemuatSesi,
     children: [
       { index: true, element: <Navigate to="/dasbor" replace /> },
       {
@@ -30,6 +35,7 @@ export const router = createBrowserRouter([
       { path: 'konversi-mk', ...konversiMkRoute },
       {
         path: 'pendaftaran',
+        middleware: [wajibDataDiriLengkap],
         children: [
           { index: true, ...daftarLowonganRoute },
           { path: ':lowonganId', ...formPendaftaranRoute },
@@ -41,8 +47,11 @@ export const router = createBrowserRouter([
   {
     path: '/tim-mb',
     Component: TimMbLayout,
+    middleware: [wajibPeran('tim_mb')],
+    loader: sesiLoader,
+    HydrateFallback: MemuatSesi,
     children: [
-      { index: true, element: <Navigate to="/tim-mb/katalog" replace /> },
+      { index: true, element: <Navigate to="/tim-mb/pendaftar" replace /> },
       { path: 'katalog', ...katalogRoute },
       { path: 'perusahaan', ...perusahaanRoute },
       { path: 'periode', ...periodeRoute },
@@ -55,7 +64,7 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  { path: '/login', ...loginRoute },
-  // Playground komponen UI
+  { path: '/login', ...loginRoute, loader: loginLoader, HydrateFallback: MemuatSesi },
+  // Playground komponen UI (publik, tanpa guard)
   { path: '/komponen', Component: App },
 ])

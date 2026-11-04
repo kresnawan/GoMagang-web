@@ -1,7 +1,9 @@
 import { cn } from '../../component/cn'
 import type { Lowongan } from '../../services/lowongan'
 
-export function LowonganImage({ lowongan, className }: { lowongan: Lowongan; className?: string }) {
+type GambarLowongan = { gambar: string; perusahaan: string }
+
+export function LowonganImage({ lowongan, className }: { lowongan: GambarLowongan; className?: string }) {
   return (
     <img
       src={lowongan.gambar}
@@ -11,15 +13,12 @@ export function LowonganImage({ lowongan, className }: { lowongan: Lowongan; cla
   )
 }
 
-/** Nama posisi, perusahaan, dan info singkat lowongan */
+/** Nama posisi & perusahaan lowongan (halaman form pendaftaran) */
 export function LowonganInfo({ lowongan, className }: { lowongan: Lowongan; className?: string }) {
   return (
     <div className={cn('min-w-0', className)}>
       <h2 className="text-h6 text-brand-700">{lowongan.posisi}</h2>
       <p className="text-brand-900">{lowongan.perusahaan}</p>
-      <p className="mt-1 text-sm text-brand-500">
-        {lowongan.bidang} · {lowongan.lokasi} · {lowongan.sistemKerja}
-      </p>
     </div>
   )
 }

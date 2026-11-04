@@ -39,11 +39,32 @@ function SuksesBanner() {
   )
 }
 
+/** Ditampilkan menggantikan pencarian & daftar bila tidak ada periode yang sedang berlangsung */
+function PeriodeBelumDibuka() {
+  return (
+    <div role="status" className="rounded-sm border border-dashed border-brand-300 px-4 py-12 text-center">
+      <p className="text-h6 text-brand-700">Periode pendaftaran belum dibuka</p>
+      <p className="mx-auto mt-2 max-w-md text-brand-500">
+        Lowongan magang akan tampil di sini setelah periode pendaftaran dibuka. Silakan cek kembali nanti.
+      </p>
+    </div>
+  )
+}
+
 export function HalamanDaftarLowongan() {
-  const lowongan = useLoaderData<typeof loader>()
+  const { filter, periodeBerjalan, posisi } = useLoaderData<typeof loader>()
   const navigation = useNavigation()
   // Redupkan list selama filter baru sedang dimuat
   const isFiltering = navigation.state === 'loading' && navigation.location.pathname === DAFTAR_LOWONGAN_PATH
+
+  if (!periodeBerjalan) {
+    return (
+      <>
+        <PageHeading />
+        <PeriodeBelumDibuka />
+      </>
+    )
+  }
 
   return (
     <>
@@ -51,12 +72,16 @@ export function HalamanDaftarLowongan() {
       <LowonganFilter />
 
       <ul className={cn('mt-6 border-t border-brand-300 transition-opacity', isFiltering && 'opacity-50')}>
-        {lowongan.map((item) => (
-          <LowonganItem key={item.id} lowongan={item} />
+        {posisi.map((item) => (
+          <LowonganItem key={item.id} posisi={item} />
         ))}
       </ul>
-      {lowongan.length === 0 && (
-        <p className="py-10 text-center text-brand-500">Tidak ada lowongan yang cocok dengan pencarian.</p>
+      {posisi.length === 0 && (
+        <p className="py-10 text-center text-brand-500">
+          {filter.q
+            ? 'Tidak ada posisi yang cocok dengan pencarian.'
+            : 'Belum ada lowongan magang pada periode pendaftaran saat ini.'}
+        </p>
       )}
     </>
   )
@@ -68,11 +93,6 @@ export function DaftarLowonganSkeleton() {
       <PageHeading />
       <div className="animate-pulse" aria-busy aria-label="Memuat lowongan">
         <div className="h-10 rounded-sm bg-brand-100" />
-        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-10 rounded-sm bg-brand-100" />
-          ))}
-        </div>
         {[1, 2, 3].map((i) => (
           <div key={i} className="mt-6 flex flex-col gap-4 sm:flex-row">
             <div className="aspect-3/1 rounded-md bg-brand-100 sm:w-52" />

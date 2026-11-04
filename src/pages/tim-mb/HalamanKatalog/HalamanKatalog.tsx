@@ -2,19 +2,19 @@ import { useCallback, useState } from 'react'
 import { useLoaderData, useNavigation, useSearchParams } from 'react-router'
 import { DropDown, FormField } from '../../../component'
 import { cn } from '../../../component/cn'
-import type { PosisiMagang } from '../../../services/posisiMagang'
+import type { Posisi } from '../../../services/lowongan'
 import { GagalMemuat, PageHeading, TambahButton } from '../components'
 import { labelPeriode } from '../periode'
 import { PERIODE_PARAM, type loader } from './route'
 import { TambahPosisiDialog } from './TambahPosisiDialog'
 
-function PosisiCard({ posisi }: { posisi: PosisiMagang }) {
+function PosisiCard({ posisi }: { posisi: Posisi }) {
   return (
     <li className="rounded-sm border border-brand-300 p-4 sm:px-5">
       <h3 className="text-h6 leading-snug text-brand-900">{posisi.posisi}</h3>
-      <p className="mt-1 text-brand-700">{posisi.perusahaan.nama}</p>
+      <p className="mt-1 text-brand-700">{posisi.perusahaan}</p>
       <p className="text-sm text-brand-500">
-        Kuota: <span className="font-bold text-brand-700">{posisi.sisaKuota}</span>/{posisi.kuotaTotal} tersisa
+        Kuota: <span className="font-bold text-brand-700">{Math.max(posisi.sisaKuota, 0)}</span>/{posisi.kuotaTotal} tersisa
       </p>
     </li>
   )
@@ -27,19 +27,18 @@ export function HalamanKatalog() {
   const [dialogOpen, setDialogOpen] = useState(false)
 
   const pilihPeriode = useCallback(
-    (id: string) => setSearchParams({ [PERIODE_PARAM]: id }, { replace: true }),
+    (id: number | string) => setSearchParams({ [PERIODE_PARAM]: String(id) }, { replace: true }),
     [setSearchParams],
   )
   const closeDialog = useCallback(() => setDialogOpen(false), [])
   // Setelah tersimpan: tutup dialog & tampilkan periode tempat posisi baru ditambahkan
   const handleSuccess = useCallback(
-    (idPeriode: string) => {
+    (idPeriode: number) => {
       setDialogOpen(false)
       if (idPeriode !== terpilih?.id) pilihPeriode(idPeriode)
     },
     [terpilih?.id, pilihPeriode],
   )
-
   const isLoading = navigation.state === 'loading'
 
   return (
@@ -48,6 +47,7 @@ export function HalamanKatalog() {
 
       <section aria-label="Daftar posisi magang" className="rounded-sm border border-brand-300 p-4 sm:p-6">
         <div className="mb-2 flex justify-end">
+          {/* Posisi wajib punya periode; tanpa periode tombol dinonaktifkan */}
           <TambahButton onClick={() => setDialogOpen(true)} disabled={periode.length === 0} />
         </div>
 

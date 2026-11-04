@@ -25,20 +25,18 @@ export function PendaftaranCard({ pendaftaran }: { pendaftaran: Pendaftaran }) {
         {pendaftaran.perusahaan}
       </header>
 
-      <div className="flex-1 p-4">
-        <div className="flex flex-col gap-3 rounded-md border border-brand-300 p-3 sm:flex-row sm:gap-4">
-          <img
-            src={pendaftaran.gambar}
-            alt={pendaftaran.perusahaan}
-            className="aspect-3/1 w-full shrink-0 self-start rounded-sm bg-brand-100 object-cover sm:aspect-4/3 sm:w-28"
-          />
-          <div className="min-w-0">
-            <h2 className="text-h6 leading-snug text-brand-700">{pendaftaran.posisi}</h2>
-            <dl className="mt-1 text-sm text-brand-500">
-              <Tanggal label="Diajukan" iso={pendaftaran.diajukanPada} />
-              <Tanggal label="Terakhir diubah" iso={pendaftaran.diubahPada} />
-            </dl>
-          </div>
+      <div className="flex flex-1 flex-col gap-3 p-4 sm:flex-row sm:gap-4">
+        <img
+          src={pendaftaran.gambar}
+          alt={pendaftaran.perusahaan}
+          className="aspect-3/1 w-full shrink-0 self-start rounded-sm bg-brand-100 object-cover sm:aspect-4/3 sm:w-28"
+        />
+        <div className="min-w-0">
+          <h2 className="text-h6 leading-snug text-brand-700">{pendaftaran.posisi}</h2>
+          <dl className="mt-1 text-sm text-brand-500">
+            <Tanggal label="Diajukan" iso={pendaftaran.diajukanPada} />
+            <Tanggal label="Terakhir diubah" iso={pendaftaran.diubahPada} />
+          </dl>
         </div>
       </div>
 

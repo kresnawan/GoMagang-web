@@ -1,78 +1,137 @@
-// MOCK: backend belum tersedia. Ganti isi fungsi-fungsi di bawah dengan fetch ke API
-// asli; tipe & signature fungsi dibiarkan sama agar halaman tidak perlu diubah.
+// Daftar posisi magang: API asli (GET/POST /api/v1/posisi), dipakai halaman Pendaftaran & Katalog Tim MB.
+// Detail satu lowongan (halaman form pendaftaran) masih MOCK karena backend belum punya
+// endpoint detail; lihat bagian MOCK di bawah.
 
-export const BIDANG = ['Software Engineering', 'Data', 'UI/UX Design', 'Jaringan'] as const
-export const LOKASI = ['Jakarta', 'Bandung', 'Surabaya', 'Malang', 'Yogyakarta'] as const
-export const SISTEM_KERJA = ['Onsite', 'Hybrid', 'Remote'] as const
-export const URUTAN = [
-  { value: 'sisa-kuota', label: 'Sisa kuota terbanyak' },
-  { value: 'nama', label: 'Posisi (A–Z)' },
-] as const
+import { api } from './http'
 
-export type Bidang = (typeof BIDANG)[number]
-export type Lokasi = (typeof LOKASI)[number]
-export type SistemKerja = (typeof SISTEM_KERJA)[number]
-export type Urutan = (typeof URUTAN)[number]['value']
+// ---- Daftar posisi (API) ----
+
+/** Posisi magang untuk daftar lowongan mahasiswa */
+export type Posisi = {
+  id: number
+  posisi: string
+  perusahaan: string
+  deskripsiPersyaratan: string
+  kuotaTotal: number
+  sisaKuota: number
+  /** Placeholder inisial perusahaan (backend belum menyimpan gambar) */
+  gambar: string
+}
+
+export type PosisiFilter = {
+  /** Cari di nama posisi */
+  q?: string
+  /** Kosong = periode default dari backend (yang sedang berjalan) */
+  idPeriode?: number
+}
+
+/** Bentuk response GET /api/v1/posisi */
+type PosisiResponse = {
+  id_posisi: number
+  posisi: string
+  deskripsi_persyaratan: string
+  kuota_total: number
+  sisa_kuota: number
+  id_periode: number
+  perusahaan: { id_perusahaan: number; nama_perusahaan: string }
+}
+
+const WARNA_GAMBAR = ['#202F66', '#4E5E99', '#2B3B78', '#060F33', '#919ECC']
+const BENTUK_USAHA = /^(pt|cv|ud|pd|tbk|persero)\.?$/i
+
+/** Inisial perusahaan tanpa bentuk usaha, mis. "PT Nusantara Digital" → "ND" */
+function inisial(nama: string) {
+  const kata = nama.split(/\s+/).filter((k) => k && !BENTUK_USAHA.test(k))
+  return (kata.length ? kata : [nama]).slice(0, 2).map((k) => k[0]?.toUpperCase() ?? '').join('')
+}
+
+/** Gambar placeholder berisi inisial perusahaan; warnanya tetap untuk perusahaan yang sama */
+export function gambarInisial(namaPerusahaan: string, seed: number) {
+  const warna = WARNA_GAMBAR[Math.abs(seed) % WARNA_GAMBAR.length]
+  const teks = inisial(namaPerusahaan).replace(/[<>&'"]/g, '')
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 100'><rect width='300' height='100' fill='${warna}'/><text x='150' y='64' font-family='sans-serif' font-size='40' font-weight='700' fill='white' text-anchor='middle'>${teks}</text></svg>`
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
+}
+
+function toPosisi(res: PosisiResponse): Posisi {
+  return {
+    id: res.id_posisi,
+    posisi: res.posisi,
+    perusahaan: res.perusahaan.nama_perusahaan,
+    deskripsiPersyaratan: res.deskripsi_persyaratan,
+    kuotaTotal: res.kuota_total,
+    sisaKuota: res.sisa_kuota,
+    gambar: gambarInisial(res.perusahaan.nama_perusahaan, res.perusahaan.id_perusahaan),
+  }
+}
+
+/**
+ * GET /api/v1/posisi. Tanpa idPeriode: mahasiswa mendapat periode berjalan ([] jika belum ada yang dibuka),
+ * Tim MB mendapat periode berjalan atau yang mulai paling akhir
+ */
+export async function getPosisiList(filter: PosisiFilter = {}, signal?: AbortSignal): Promise<Posisi[]> {
+  const { data } = await api.get<PosisiResponse[]>('/api/v1/posisi', {
+    params: { s: filter.q || undefined, id_periode: filter.idPeriode },
+    signal,
+  })
+  return data.map(toPosisi)
+}
+
+/** Batas panjang nama posisi (karakter), sama dengan backend */
+export const NAMA_POSISI_MAX = 255
+
+/** Body POST /api/v1/posisi; sisa kuota otomatis = kuota total */
+export type PosisiInput = {
+  idPerusahaan: number
+  idPeriode: number
+  posisi: string
+  deskripsiPersyaratan: string
+  kuotaTotal: number
+}
+
+/** POST /api/v1/posisi (Tim MB). Error 422 membawa `message` yang bisa langsung ditampilkan (lihat pesanError) */
+export async function tambahPosisi(input: PosisiInput, signal?: AbortSignal): Promise<Posisi & { idPeriode: number }> {
+  const { data } = await api.post<PosisiResponse>(
+    '/api/v1/posisi',
+    {
+      id_perusahaan: input.idPerusahaan,
+      id_periode: input.idPeriode,
+      posisi: input.posisi,
+      deskripsi_persyaratan: input.deskripsiPersyaratan,
+      kuota_total: input.kuotaTotal,
+    },
+    { signal },
+  )
+  return { ...toPosisi(data), idPeriode: data.id_periode }
+}
+
+export const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2 MB
+
+// ---- MOCK: detail lowongan untuk form pendaftaran. Hapus saat endpoint detail tersedia ----
 
 export type Lowongan = {
   id: string
   posisi: string
   perusahaan: string
   gambar: string
-  bidang: Bidang
-  lokasi: Lokasi
-  sistemKerja: SistemKerja
   kuota: number
   terisi: number
 }
 
-export type LowonganFilter = {
-  q?: string
-  bidang?: Bidang
-  lokasi?: Lokasi
-  sistemKerja?: SistemKerja
-  /** Kosong = terbaru */
-  urutkan?: Urutan
-}
-
-export const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2 MB
-
-/** Gambar placeholder berisi inisial perusahaan */
-function mockGambar(inisial: string, warna: string) {
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 100'><rect width='300' height='100' fill='${warna}'/><text x='150' y='64' font-family='sans-serif' font-size='40' font-weight='700' fill='white' text-anchor='middle'>${inisial}</text></svg>`
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`
-}
-
-const store: Lowongan[] = [
-  { id: 'lw-001', posisi: 'Frontend Developer Intern', perusahaan: 'PT Nusantara Digital', gambar: mockGambar('ND', '#202F66'), bidang: 'Software Engineering', lokasi: 'Jakarta', sistemKerja: 'Hybrid', kuota: 5, terisi: 2 },
-  { id: 'lw-002', posisi: 'Data Analyst Intern', perusahaan: 'PT Awan Biru Teknologi', gambar: mockGambar('AB', '#4E5E99'), bidang: 'Data', lokasi: 'Bandung', sistemKerja: 'Onsite', kuota: 3, terisi: 1 },
-  { id: 'lw-003', posisi: 'UI/UX Designer Intern', perusahaan: 'CV Kreasi Rupa', gambar: mockGambar('KR', '#919ECC'), bidang: 'UI/UX Design', lokasi: 'Yogyakarta', sistemKerja: 'Remote', kuota: 2, terisi: 2 },
-  { id: 'lw-004', posisi: 'Backend Developer Intern', perusahaan: 'PT Sinergi Sistem', gambar: mockGambar('SS', '#060F33'), bidang: 'Software Engineering', lokasi: 'Surabaya', sistemKerja: 'Onsite', kuota: 4, terisi: 0 },
-  { id: 'lw-005', posisi: 'Network Engineer Intern', perusahaan: 'PT Jaring Kencana', gambar: mockGambar('JK', '#2B3B78'), bidang: 'Jaringan', lokasi: 'Malang', sistemKerja: 'Onsite', kuota: 3, terisi: 1 },
-  { id: 'lw-006', posisi: 'Machine Learning Intern', perusahaan: 'PT Awan Biru Teknologi', gambar: mockGambar('AB', '#4E5E99'), bidang: 'Data', lokasi: 'Jakarta', sistemKerja: 'Hybrid', kuota: 2, terisi: 0 },
-]
+const store: Lowongan[] = (
+  [
+    { id: 'lw-001', posisi: 'Frontend Developer Intern', perusahaan: 'PT Nusantara Digital', kuota: 5, terisi: 2 },
+    { id: 'lw-002', posisi: 'Data Analyst Intern', perusahaan: 'PT Awan Biru Teknologi', kuota: 3, terisi: 1 },
+    { id: 'lw-003', posisi: 'UI/UX Designer Intern', perusahaan: 'CV Kreasi Rupa', kuota: 2, terisi: 2 },
+    { id: 'lw-004', posisi: 'Backend Developer Intern', perusahaan: 'PT Sinergi Sistem', kuota: 4, terisi: 0 },
+    { id: 'lw-005', posisi: 'Network Engineer Intern', perusahaan: 'PT Jaring Kencana', kuota: 3, terisi: 1 },
+    { id: 'lw-006', posisi: 'Machine Learning Intern', perusahaan: 'PT Awan Biru Teknologi', kuota: 2, terisi: 0 },
+  ] satisfies Omit<Lowongan, 'gambar'>[]
+).map((item, i) => ({ ...item, gambar: gambarInisial(item.perusahaan, i) }))
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export const sisaKuota = (lowongan: Lowongan) => lowongan.kuota - lowongan.terisi
-
-export async function getLowonganList(filter: LowonganFilter = {}): Promise<Lowongan[]> {
-  await delay(400)
-  const q = filter.q?.toLowerCase()
-
-  const result = store.filter(
-    (item) =>
-      (!q || item.posisi.toLowerCase().includes(q) || item.perusahaan.toLowerCase().includes(q)) &&
-      (!filter.bidang || item.bidang === filter.bidang) &&
-      (!filter.lokasi || item.lokasi === filter.lokasi) &&
-      (!filter.sistemKerja || item.sistemKerja === filter.sistemKerja),
-  )
-
-  if (filter.urutkan === 'sisa-kuota') result.sort((a, b) => sisaKuota(b) - sisaKuota(a))
-  if (filter.urutkan === 'nama') result.sort((a, b) => a.posisi.localeCompare(b.posisi))
-
-  return result.map((item) => ({ ...item }))
-}
 
 export async function getLowongan(id: string): Promise<Lowongan | null> {
   await delay(400)

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useFetcher, useLoaderData } from 'react-router'
 import { FormDialog, FormField, TextInput } from '../../../component'
 import { cn } from '../../../component/cn'
+import { NAMA_PERUSAHAAN_MAX } from '../../../services/perusahaan'
 import { GagalMemuat, PageHeading, TambahButton } from '../components'
 import { tableClass as t } from '../table'
 import type { action, loader } from './route'
@@ -29,7 +30,7 @@ function TambahPerusahaanDialog({ onClose }: { onClose: () => void }) {
       onSubmit={(formData) => fetcher.submit(formData, { method: 'post' })}
     >
       <FormField label="Nama Perusahaan" htmlFor="namaPerusahaan">
-        <TextInput id="namaPerusahaan" name="namaPerusahaan" required maxLength={255} placeholder="mis. PT Nusantara Digital" />
+        <TextInput id="namaPerusahaan" name="namaPerusahaan" required maxLength={NAMA_PERUSAHAAN_MAX} placeholder="mis. PT Nusantara Digital" />
       </FormField>
       {result && !result.ok && (
         <p role="alert" className="text-red-600">
@@ -60,7 +61,6 @@ export function HalamanPerusahaan() {
               <tr>
                 <th scope="col" className={cn(t.th, 'w-14')}>No</th>
                 <th scope="col" className={t.th}>Nama Perusahaan</th>
-                <th scope="col" className={cn(t.th, 'w-36 whitespace-nowrap text-center')}>Jumlah Posisi</th>
               </tr>
             </thead>
             <tbody>
@@ -68,12 +68,11 @@ export function HalamanPerusahaan() {
                 <tr key={item.id}>
                   <td className={t.td}>{index + 1}</td>
                   <td className={t.td}>{item.nama}</td>
-                  <td className={cn(t.td, 'text-center')}>{item.jumlahPosisi}</td>
                 </tr>
               ))}
               {perusahaan.length === 0 && (
                 <tr>
-                  <td colSpan={3} className={t.empty}>Belum ada perusahaan mitra.</td>
+                  <td colSpan={2} className={t.empty}>Belum ada perusahaan mitra.</td>
                 </tr>
               )}
             </tbody>

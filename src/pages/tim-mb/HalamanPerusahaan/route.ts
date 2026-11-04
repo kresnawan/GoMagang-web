@@ -1,20 +1,25 @@
-import { data, type ActionFunctionArgs } from 'react-router'
-import { getPerusahaanRingkasan, PosisiMagangError, tambahPerusahaan } from '../../../services/posisiMagang'
+import { data, type ActionFunctionArgs, type LoaderFunctionArgs } from 'react-router'
+import { pesanError } from '../../../services/http'
+import { getPerusahaan, NAMA_PERUSAHAAN_MAX, tambahPerusahaan } from '../../../services/perusahaan'
 
-export async function loader() {
-  return getPerusahaanRingkasan()
+export async function loader({ request }: LoaderFunctionArgs) {
+  return getPerusahaan(request.signal)
 }
+
+const gagal = (error: string, status: number) => data({ ok: false as const, error }, { status })
 
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData()
   const nama = String(formData.get('namaPerusahaan') ?? '').trim()
-  if (!nama) return data({ ok: false as const, error: 'Nama perusahaan wajib diisi.' }, { status: 400 })
+  if (!nama) return gagal('Nama perusahaan wajib diisi.', 400)
+  if ([...nama].length > NAMA_PERUSAHAAN_MAX) {
+    return gagal(`Nama perusahaan maksimal ${NAMA_PERUSAHAAN_MAX} karakter.`, 400)
+  }
 
   try {
-    await tambahPerusahaan(nama)
+    await tambahPerusahaan(nama, request.signal)
     return { ok: true as const }
   } catch (err) {
-    const message = err instanceof PosisiMagangError ? err.message : 'Gagal menambah perusahaan. Coba lagi.'
-    return data({ ok: false as const, error: message }, { status: 500 })
+    return gagal(pesanError(err, 'Gagal menambah perusahaan. Coba lagi.'), 500)
   }
 }

@@ -1,31 +1,28 @@
-import { data, type ActionFunctionArgs } from 'react-router'
-import { getPeriodeList, PosisiMagangError, tambahPeriode } from '../../../services/posisiMagang'
+import { data, type ActionFunctionArgs, type LoaderFunctionArgs } from 'react-router'
+import { pesanError } from '../../../services/http'
+import { getPeriode, tambahPeriode } from '../../../services/periode'
+import { CATATAN_MAX, wibKeIso } from '../periode'
 
-export async function loader() {
-  return getPeriodeList()
+export async function loader({ request }: LoaderFunctionArgs) {
+  return getPeriode(request.signal)
 }
 
-/** Nilai <input type="datetime-local"> ("2026-10-01T08:00", waktu lokal) → ISO 8601, atau null jika tidak valid */
-function keIso(value: FormDataEntryValue | null) {
-  const waktu = new Date(String(value ?? ''))
-  return Number.isNaN(waktu.getTime()) ? null : waktu.toISOString()
-}
+const gagal = (error: string, status: number) => data({ ok: false as const, error }, { status })
 
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData()
   const catatan = String(formData.get('catatan') ?? '').trim() || null
-  const waktuMulai = keIso(formData.get('waktuMulai'))
-  const waktuTutup = keIso(formData.get('waktuTutup'))
+  const waktuMulai = wibKeIso(formData.get('waktuMulai'))
+  const waktuTutup = wibKeIso(formData.get('waktuTutup'))
 
-  if (!waktuMulai || !waktuTutup) {
-    return data({ ok: false as const, error: 'Waktu mulai dan waktu tutup wajib diisi.' }, { status: 400 })
-  }
+  if (!waktuMulai || !waktuTutup) return gagal('Waktu mulai dan waktu tutup wajib diisi.', 400)
+  if (!(Date.parse(waktuTutup) > Date.parse(waktuMulai))) return gagal('Waktu tutup harus setelah waktu mulai.', 400)
+  if (catatan && catatan.length > CATATAN_MAX) return gagal(`Catatan maksimal ${CATATAN_MAX} karakter.`, 400)
 
   try {
-    await tambahPeriode({ catatan, waktuMulai, waktuTutup })
+    await tambahPeriode({ catatan, waktuMulai, waktuTutup }, request.signal)
     return { ok: true as const }
   } catch (err) {
-    const message = err instanceof PosisiMagangError ? err.message : 'Gagal menambah periode. Coba lagi.'
-    return data({ ok: false as const, error: message }, { status: 500 })
+    return gagal(pesanError(err, 'Gagal menambah periode. Coba lagi.'), 500)
   }
 }

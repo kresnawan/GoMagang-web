@@ -12,6 +12,8 @@ import {
 } from './form/HalamanFormPendaftaran'
 import { action as formAction, loader as formLoader } from './form/route'
 
+export { wajibDataDiriLengkap } from './guard'
+
 type PageRoute = Omit<RouteObject, 'path' | 'index' | 'children'>
 
 /** /pendaftaran — daftar lowongan */
