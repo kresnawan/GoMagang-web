@@ -1,6 +1,4 @@
-// Daftar posisi magang: API asli (GET/POST /api/v1/posisi), dipakai halaman Pendaftaran & Katalog Tim MB.
-// Detail satu lowongan (halaman form pendaftaran) masih MOCK karena backend belum punya
-// endpoint detail; lihat bagian MOCK di bawah.
+// Posisi magang: GET/POST /api/v1/posisi, dipakai halaman Pendaftaran (daftar & form) dan Katalog Tim MB.
 
 import { api } from './http'
 
@@ -11,9 +9,13 @@ export type Posisi = {
   id: number
   posisi: string
   perusahaan: string
+  /** id_perusahaan backend */
+  idPerusahaan: number
+  /** id_periode backend */
+  idPeriode: number
   deskripsiPersyaratan: string
-  kuotaTotal: number
-  sisaKuota: number
+  /** Kuota penerimaan; hanya informasi, tidak membatasi jumlah pendaftar */
+  kuota: number
   /** Placeholder inisial perusahaan (backend belum menyimpan gambar) */
   gambar: string
 }
@@ -30,8 +32,7 @@ type PosisiResponse = {
   id_posisi: number
   posisi: string
   deskripsi_persyaratan: string
-  kuota_total: number
-  sisa_kuota: number
+  kuota: number
   id_periode: number
   perusahaan: { id_perusahaan: number; nama_perusahaan: string }
 }
@@ -58,9 +59,10 @@ function toPosisi(res: PosisiResponse): Posisi {
     id: res.id_posisi,
     posisi: res.posisi,
     perusahaan: res.perusahaan.nama_perusahaan,
+    idPerusahaan: res.perusahaan.id_perusahaan,
+    idPeriode: res.id_periode,
     deskripsiPersyaratan: res.deskripsi_persyaratan,
-    kuotaTotal: res.kuota_total,
-    sisaKuota: res.sisa_kuota,
+    kuota: res.kuota,
     gambar: gambarInisial(res.perusahaan.nama_perusahaan, res.perusahaan.id_perusahaan),
   }
 }
@@ -77,20 +79,31 @@ export async function getPosisiList(filter: PosisiFilter = {}, signal?: AbortSig
   return data.map(toPosisi)
 }
 
+/**
+ * Satu posisi untuk form pendaftaran. Backend belum punya endpoint detail, jadi diambil dari daftar
+ * periode berjalan (satu-satunya periode yang bisa didaftar mahasiswa). null bila tidak ada di sana
+ */
+export async function getPosisi(id: number, signal?: AbortSignal): Promise<Posisi | null> {
+  if (!Number.isSafeInteger(id) || id < 1) return null
+  const daftar = await getPosisiList({}, signal)
+  return daftar.find((item) => item.id === id) ?? null
+}
+
 /** Batas panjang nama posisi (karakter), sama dengan backend */
 export const NAMA_POSISI_MAX = 255
 
-/** Body POST /api/v1/posisi; sisa kuota otomatis = kuota total */
+/** Body POST /api/v1/posisi */
 export type PosisiInput = {
   idPerusahaan: number
   idPeriode: number
   posisi: string
   deskripsiPersyaratan: string
-  kuotaTotal: number
+  /** Kuota penerimaan, minimal 1 */
+  kuota: number
 }
 
 /** POST /api/v1/posisi (Tim MB). Error 422 membawa `message` yang bisa langsung ditampilkan (lihat pesanError) */
-export async function tambahPosisi(input: PosisiInput, signal?: AbortSignal): Promise<Posisi & { idPeriode: number }> {
+export async function tambahPosisi(input: PosisiInput, signal?: AbortSignal): Promise<Posisi> {
   const { data } = await api.post<PosisiResponse>(
     '/api/v1/posisi',
     {
@@ -98,48 +111,11 @@ export async function tambahPosisi(input: PosisiInput, signal?: AbortSignal): Pr
       id_periode: input.idPeriode,
       posisi: input.posisi,
       deskripsi_persyaratan: input.deskripsiPersyaratan,
-      kuota_total: input.kuotaTotal,
+      kuota: input.kuota,
     },
     { signal },
   )
-  return { ...toPosisi(data), idPeriode: data.id_periode }
+  return toPosisi(data)
 }
 
 export const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2 MB
-
-// ---- MOCK: detail lowongan untuk form pendaftaran. Hapus saat endpoint detail tersedia ----
-
-export type Lowongan = {
-  id: string
-  posisi: string
-  perusahaan: string
-  gambar: string
-  kuota: number
-  terisi: number
-}
-
-const store: Lowongan[] = (
-  [
-    { id: 'lw-001', posisi: 'Frontend Developer Intern', perusahaan: 'PT Nusantara Digital', kuota: 5, terisi: 2 },
-    { id: 'lw-002', posisi: 'Data Analyst Intern', perusahaan: 'PT Awan Biru Teknologi', kuota: 3, terisi: 1 },
-    { id: 'lw-003', posisi: 'UI/UX Designer Intern', perusahaan: 'CV Kreasi Rupa', kuota: 2, terisi: 2 },
-    { id: 'lw-004', posisi: 'Backend Developer Intern', perusahaan: 'PT Sinergi Sistem', kuota: 4, terisi: 0 },
-    { id: 'lw-005', posisi: 'Network Engineer Intern', perusahaan: 'PT Jaring Kencana', kuota: 3, terisi: 1 },
-    { id: 'lw-006', posisi: 'Machine Learning Intern', perusahaan: 'PT Awan Biru Teknologi', kuota: 2, terisi: 0 },
-  ] satisfies Omit<Lowongan, 'gambar'>[]
-).map((item, i) => ({ ...item, gambar: gambarInisial(item.perusahaan, i) }))
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
-export const sisaKuota = (lowongan: Lowongan) => lowongan.kuota - lowongan.terisi
-
-export async function getLowongan(id: string): Promise<Lowongan | null> {
-  await delay(400)
-  const item = store.find((lowongan) => lowongan.id === id)
-  return item ? { ...item } : null
-}
-
-/** MOCK helper: akses langsung ke data lowongan untuk service mock lain. Hapus saat backend siap */
-export function mockFindLowongan(id: string) {
-  return store.find((item) => item.id === id)
-}

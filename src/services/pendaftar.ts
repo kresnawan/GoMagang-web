@@ -1,64 +1,93 @@
-// MOCK: backend belum tersedia. Ganti isi fungsi-fungsi di bawah dengan fetch ke API
-// asli; tipe & signature fungsi dibiarkan sama agar halaman tidak perlu diubah.
-// Data pendaftaran dari sisi Tim MB (banyak mahasiswa), terpisah dari services/pendaftaran.ts (sisi mahasiswa).
+// Pendaftaran dari sisi Tim MB (semua mahasiswa): GET /api/v1/pendaftaran & /{id}, PATCH /api/v1/pendaftaran?id= (ubah status),
+// PUT /api/v1/pendaftaran/jadwal-seleksi-substansi & /plot-dpm (satu atau banyak pendaftar).
+// POST /api/v1/pendaftaran/ekspor (berkas Excel dari pendaftaran terpilih, dibuat backend).
+// Unduh berkas: services/berkas.ts. Tipe response & pemetaan tahap dipakai bersama dengan services/pendaftaran.ts.
+// Pagination, pencarian nama, dan filter periode/status/perusahaan dikerjakan backend (getHalamanPendaftar).
 
-import { JENIS_KELAMIN, PROGRAM_STUDI, type JenisKelamin, type ProgramStudi } from './dataDiri'
-import type { BerkasPendaftaran, JadwalSeleksiSubstansi, LogStatus, PlottingDpm, StatusPendaftaran } from './pendaftaran'
+import { JENIS_KELAMIN_DARI_KODE } from './dataDiri'
+import { isAxiosError } from 'axios'
+import { bacaErrorBlob, namaDariHeader, simpanBlob } from './berkas'
+import { api } from './http'
+import {
+  toTahapPendaftaran,
+  type BerkasPendaftaran,
+  type JadwalSeleksiSubstansi,
+  type LogStatus,
+  type HalamanPendaftaranResponse,
+  type PendaftaranDetailResponse,
+  type PendaftaranListItemResponse,
+  type PendaftaranResponse,
+  type PlottingDpm,
+  type StatusPendaftaran,
+  type SuratKeterangan,
+} from './pendaftaran'
 
 export type Pendaftar = {
-  id: string
+  id: number
   nim: string
   nama: string
   posisi: string
   perusahaan: string
-  idPeriode: string
+  /** id_periode backend */
+  idPeriode: number
   status: StatusPendaftaran
   /** ISO 8601 */
   diajukanPada: string
-  jadwalSeleksi: JadwalSeleksiSubstansi | null
-  suratKeterangan: { nama: string; ukuran: number } | null
-  plottingDpm: PlottingDpm | null
+  /** ISO 8601 */
+  diubahPada: string
+  /** Jadwal seleksi substansi sudah diisi (hanya dari daftar; detail punya isinya di jadwalSeleksi) */
+  adaJadwalSeleksi: boolean
+  /** Plotting DPM sudah diisi (hanya dari daftar; detail punya isinya di plottingDpm) */
+  adaPlottingDpm: boolean
 }
 
-export const KOLOM_CARI = [
-  { value: 'nama', label: 'Nama' },
-  { value: 'nim', label: 'NIM' },
-  { value: 'posisi', label: 'Posisi' },
-  { value: 'perusahaan', label: 'Perusahaan' },
-] as const
-export type KolomCari = (typeof KOLOM_CARI)[number]['value']
-
-export type PendaftarFilter = {
-  q?: string
-  cariBerdasarkan: KolomCari
-  idPeriode?: string
-  status?: StatusPendaftaran
+/**
+ * Query GET /api/v1/pendaftaran, dengan nama yang sama persis seperti di backend (dan di URL halaman Pendaftar).
+ * Yang undefined tidak dikirim, sehingga backend memakai bawaannya
+ */
+export type PendaftarQuery = {
+  /** Halaman, mulai dari 1 (bawaan backend 1) */
+  p: number
+  /** Baris per halaman (bawaan backend 25) */
+  r: number
+  /** Bagian dari nama mahasiswa */
+  s?: string
+  /** id_periode */
+  periode?: number
+  /** id_status, lihat idStatus */
+  status?: number
+  /** id_perusahaan */
+  perusahaan?: number
+  /** id_posisi */
+  posisi?: number
 }
 
 export type PendaftarHalaman = {
   /** Baris pada halaman yang diminta */
   items: Pendaftar[]
-  /** Jumlah semua data yang cocok dengan filter */
+  /** Jumlah semua data (yang cocok dengan filter) dari semua halaman */
   total: number
-  /** Ringkasan semua data yang cocok dengan filter (untuk "Pilih semua" lintas halaman) */
-  semua: PendaftarRingkas[]
 }
 
-export type PendaftarRingkas = Pick<Pendaftar, 'id' | 'status' | 'nama' | 'nim'>
+/** Data pendaftar terpilih yang dibutuhkan aksi massal */
+export type PendaftarRingkas = Pick<Pendaftar, 'id' | 'status' | 'nama' | 'nim' | 'adaJadwalSeleksi' | 'adaPlottingDpm'>
 
-/** Detail lengkap satu pendaftar: data diri (isi formulir) + berkas + riwayat status */
-export type PendaftarDetail = Pendaftar & {
-  email: string
-  jenisKelamin: JenisKelamin
-  programStudi: ProgramStudi
-  ipk: number
-  semester: number
-  nomorHp: string
-  berkas: BerkasPendaftaran[]
+export type BerkasPendaftar = BerkasPendaftaran
+
+/** Detail lengkap satu pendaftar: data diri + berkas + riwayat status + data tahap */
+export type PendaftarDetail = Omit<Pendaftar, 'adaJadwalSeleksi' | 'adaPlottingDpm'> & {
+  email: string | null
+  jenisKelamin: string | null
+  programStudi: string | null
+  ipk: number | null
+  semester: number | null
+  nomorHp: string | null
+  berkas: BerkasPendaftar[]
   /** Urut dari yang paling lama */
   log: LogStatus[]
-  /** ISO 8601 */
-  diubahPada: string
+  jadwalSeleksi: JadwalSeleksiSubstansi | null
+  suratKeterangan: SuratKeterangan | null
+  plottingDpm: PlottingDpm | null
 }
 
 /**
@@ -75,158 +104,197 @@ export const TRANSISI_TIM_MB: Record<StatusPendaftaran, StatusPendaftaran[]> = {
   'Batal/Mengundurkan Diri': [],
 }
 
-export class PendaftarError extends Error {}
+const ENDPOINT = '/api/v1/pendaftaran'
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
-// ---- Data contoh (deterministik) ----
-const NAMA_DEPAN = ['Budi', 'Siti', 'Andi', 'Dewi', 'Rizky', 'Putri', 'Fajar', 'Nadia', 'Agus', 'Rina', 'Dimas', 'Ayu', 'Yoga', 'Sari']
-const NAMA_BELAKANG = ['Santoso', 'Rahmawati', 'Pratama', 'Lestari', 'Hidayat', 'Wulandari', 'Saputra', 'Kusuma', 'Nugroho', 'Anggraini']
-const POSISI: Array<[posisi: string, perusahaan: string, idPeriode: string]> = [
-  ['Frontend Developer Intern', 'PT Nusantara Digital', 'pr-2'],
-  ['Data Analyst Intern', 'PT Awan Biru Teknologi', 'pr-2'],
-  ['UI/UX Designer Intern', 'CV Kreasi Rupa', 'pr-2'],
-  ['Backend Developer Intern', 'PT Sinergi Sistem', 'pr-1'],
-  ['Network Engineer Intern', 'PT Jaring Kencana', 'pr-1'],
-]
-const STATUS_CONTOH: StatusPendaftaran[] = [
-  'Menunggu Verifikasi', 'Menunggu Verifikasi', 'Lolos Seleksi Administrasi', 'Lolos Seleksi Administrasi',
-  'Diterima', 'Aktif', 'Aktif', 'Selesai', 'Tidak Lolos', 'Batal/Mengundurkan Diri',
-]
-
-/** Urutan status dari awal sampai status akhir contoh, untuk membangun riwayat log */
-function jalurStatus(status: StatusPendaftaran, i: number): StatusPendaftaran[] {
-  switch (status) {
-    case 'Menunggu Verifikasi': return ['Menunggu Verifikasi']
-    case 'Lolos Seleksi Administrasi': return ['Menunggu Verifikasi', 'Lolos Seleksi Administrasi']
-    case 'Diterima': return ['Menunggu Verifikasi', 'Lolos Seleksi Administrasi', 'Diterima']
-    case 'Aktif': return ['Menunggu Verifikasi', 'Lolos Seleksi Administrasi', 'Diterima', 'Aktif']
-    case 'Selesai': return ['Menunggu Verifikasi', 'Lolos Seleksi Administrasi', 'Diterima', 'Aktif', 'Selesai']
-    case 'Tidak Lolos': return i % 2 ? ['Menunggu Verifikasi', 'Tidak Lolos'] : ['Menunggu Verifikasi', 'Lolos Seleksi Administrasi', 'Tidak Lolos']
-    case 'Batal/Mengundurkan Diri': return ['Menunggu Verifikasi', 'Lolos Seleksi Administrasi', 'Batal/Mengundurkan Diri']
+/** Bagian yang sama untuk baris daftar & detail */
+function toPendaftarDasar(res: PendaftaranResponse): Omit<Pendaftar, 'adaJadwalSeleksi' | 'adaPlottingDpm'> {
+  return {
+    id: res.id_pendaftaran,
+    // Data diri wajib lengkap saat mendaftar, tapi tetap dijaga agar pencarian tidak error
+    nim: res.mahasiswa.nim ?? '',
+    nama: res.mahasiswa.nama ?? '',
+    posisi: res.posisi,
+    perusahaan: res.perusahaan.nama_perusahaan,
+    idPeriode: res.id_periode,
+    status: res.status,
+    diajukanPada: res.created_at,
+    diubahPada: res.updated_at,
   }
 }
 
-const HARI = 24 * 60 * 60 * 1000
-let nextLogId = 1
-
-const store: PendaftarDetail[] = Array.from({ length: 132 }, (_, i) => {
-  const [posisi, perusahaan, idPeriode] = POSISI[(i * 7) % POSISI.length]
-  const diajukan = Date.UTC(2026, 9, 1 + (i % 28), 2 + (i % 8), (i * 13) % 60)
-  const namaDepan = NAMA_DEPAN[i % NAMA_DEPAN.length]
-  const namaBelakang = NAMA_BELAKANG[(i * 3) % NAMA_BELAKANG.length]
-  const status = STATUS_CONTOH[(i * 3) % STATUS_CONTOH.length]
-  const log: LogStatus[] = jalurStatus(status, i).map((statusBaru, langkah, jalur) => ({
-    id: `lgp-${nextLogId++}`,
-    statusLama: langkah === 0 ? null : jalur[langkah - 1],
-    statusBaru,
-    dibuatPada: new Date(diajukan + langkah * 3 * HARI + langkah * 3_600_000).toISOString(),
-  }))
-
-  return {
-    id: `pdr-${String(i + 1).padStart(3, '0')}`,
-    nim: `2151502001${String(10000 + i * 37).slice(-5)}`,
-    nama: `${namaDepan} ${namaBelakang}`,
-    posisi,
-    perusahaan,
-    idPeriode,
-    status,
-    diajukanPada: log[0].dibuatPada,
-    diubahPada: log[log.length - 1].dibuatPada,
-    jadwalSeleksi: null,
-    suratKeterangan: null,
-    plottingDpm: null,
-    email: `${namaDepan}.${namaBelakang}${i}@student.ub.ac.id`.toLowerCase(),
-    jenisKelamin: JENIS_KELAMIN[i % 2],
-    programStudi: PROGRAM_STUDI[i % PROGRAM_STUDI.length],
-    ipk: Math.round((2.75 + ((i * 17) % 125) / 100) * 100) / 100,
-    semester: 5 + (i % 4),
-    nomorHp: `08${String(1_200_000_000 + i * 7_919_311).slice(0, 10)}`,
-    berkas: [
-      { jenis: 'Surat Pernyataan DPA', nama: `Surat_DPA_${namaDepan}_${namaBelakang}.pdf`, ukuran: 150_000 + i * 811 },
-      { jenis: 'CV', nama: `CV_${namaDepan}_${namaBelakang}.pdf`, ukuran: 280_000 + i * 1_337 },
-    ],
-    log,
-  }
+const toPendaftar = (res: PendaftaranListItemResponse): Pendaftar => ({
+  ...toPendaftarDasar(res),
+  adaJadwalSeleksi: res.ada_jadwal_seleksi,
+  adaPlottingDpm: res.ada_plotting_dpm,
 })
 
-/** Bentuk ringkas untuk daftar (tanpa data diri, berkas, & log) */
-function toPendaftar({ id, nim, nama, posisi, perusahaan, idPeriode, status, diajukanPada, jadwalSeleksi, suratKeterangan, plottingDpm }: PendaftarDetail): Pendaftar {
-  return structuredClone({ id, nim, nama, posisi, perusahaan, idPeriode, status, diajukanPada, jadwalSeleksi, suratKeterangan, plottingDpm })
+function toPendaftarDetail(res: PendaftaranDetailResponse): PendaftarDetail {
+  const { mahasiswa: m } = res
+  return {
+    ...toPendaftarDasar(res),
+    email: m.email,
+    jenisKelamin: (m.jenis_kelamin && JENIS_KELAMIN_DARI_KODE[m.jenis_kelamin]) || m.jenis_kelamin,
+    programStudi: m.program_studi,
+    ipk: m.ipk,
+    semester: m.semester,
+    nomorHp: m.no_hp,
+    ...toTahapPendaftaran(res),
+  }
 }
 
-function cocok(item: Pendaftar, filter: PendaftarFilter) {
-  const q = filter.q?.toLowerCase()
-  return (
-    (!q || item[filter.cariBerdasarkan].toLowerCase().includes(q)) &&
-    (!filter.idPeriode || item.idPeriode === filter.idPeriode) &&
-    (!filter.status || item.status === filter.status)
+// ---- API ----
+
+/**
+ * Satu halaman pendaftaran (Tim MB) yang cocok dengan pencarian & filter, dari yang paling baru.
+ * Pencarian, filter, dan pagination semuanya dikerjakan backend
+ */
+export async function getHalamanPendaftar(query: PendaftarQuery, signal?: AbortSignal): Promise<PendaftarHalaman> {
+  const { data } = await api.get<HalamanPendaftaranResponse>(ENDPOINT, { params: query, signal })
+  return { items: data.data.map(toPendaftar), total: data.total }
+}
+
+/**
+ * Semua pendaftaran (dari semua halaman) yang cocok dengan pencarian & filter, untuk "Pilih semua".
+ * Diminta dalam satu halaman dengan r = perkiraan total; bila ternyata bertambah, diminta lagi dengan total terbaru
+ */
+export async function getSemuaPendaftar(
+  filter: Omit<PendaftarQuery, 'p' | 'r'>,
+  perkiraanTotal: number,
+  signal?: AbortSignal,
+): Promise<Pendaftar[]> {
+  const ambil = (r: number) =>
+    api.get<HalamanPendaftaranResponse>(ENDPOINT, { params: { ...filter, p: 1, r: Math.max(r, 1) }, signal })
+  let { data } = await ambil(perkiraanTotal)
+  if (data.total > data.data.length) ({ data } = await ambil(data.total))
+  return data.data.map(toPendaftar)
+}
+
+/** Format berkas ekspor yang didukung backend, beserta labelnya */
+export const FORMAT_EKSPOR = [{ format: 'xlsx', label: 'Excel (.xlsx)' }] as const
+
+export type FormatEkspor = (typeof FORMAT_EKSPOR)[number]['format']
+
+/** Batas jumlah pendaftaran dalam satu ekspor, sama dengan backend */
+export const MAX_EKSPOR = 10_000
+
+/**
+ * POST /api/v1/pendaftaran/ekspor: berkas dibuat backend dari pendaftaran terpilih, lalu diunduh.
+ * Error 404 (ada yang tidak ditemukan) tanpa body; 422 membawa `message` (lihat pesanError)
+ */
+export async function eksporPendaftar(idPendaftar: number[], format: FormatEkspor): Promise<void> {
+  try {
+    const response = await api.post<Blob>(
+      `${ENDPOINT}/ekspor`,
+      { format, id_pendaftaran: idPendaftar },
+      { responseType: 'blob' },
+    )
+    simpanBlob(response.data, namaDariHeader(response) ?? `pendaftar.${format}`)
+  } catch (err) {
+    await bacaErrorBlob(err)
+    throw err
+  }
+}
+
+/** null bila tidak ditemukan (404) atau id tidak valid */
+export async function getPendaftarDetail(id: number, signal?: AbortSignal): Promise<PendaftarDetail | null> {
+  if (!Number.isSafeInteger(id) || id < 1) return null
+  try {
+    const { data } = await api.get<PendaftaranDetailResponse>(`${ENDPOINT}/${id}`, { signal })
+    return toPendaftarDetail(data)
+  } catch (err) {
+    if (isAxiosError(err) && err.response?.status === 404) return null
+    throw err
+  }
+}
+
+/**
+ * PATCH /api/v1/pendaftaran?id={id}. Mengembalikan detail terbaru. Error 409 (perubahan tidak diizinkan)
+ * & 422 membawa `message` yang bisa langsung ditampilkan (lihat pesanError)
+ */
+export async function ubahStatusPendaftar(id: number, status: StatusPendaftaran, signal?: AbortSignal): Promise<PendaftarDetail> {
+  const { data } = await api.patch<PendaftaranDetailResponse>(ENDPOINT, { status }, { params: { id }, signal })
+  return toPendaftarDetail(data)
+}
+
+/** Batas panjang lokasi jadwal seleksi (karakter), sama dengan backend */
+export const LOKASI_JADWAL_MAX = 255
+
+export type JadwalSeleksiInput = {
+  idPendaftar: number[]
+  /** YYYY-MM-DD, tidak boleh sebelum hari ini (WIB) */
+  tanggal: string
+  /** HH:MM, 24 jam */
+  jam: string
+  lokasi: string
+}
+
+/** Tanggal hari ini menurut WIB (YYYY-MM-DD), patokan backend untuk "tanggal sudah lewat" */
+export const hariIniWib = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date())
+
+/**
+ * Cek input jadwal sebelum dikirim, dengan aturan yang sama seperti backend. Pesannya juga disamakan
+ * dengan pesan 422 backend. null bila valid
+ */
+export function validasiJadwalSeleksi(input: JadwalSeleksiInput): string | null {
+  if (input.idPendaftar.length === 0) return 'Pilih minimal satu pendaftaran.'
+  const [tahun, bulan, hari] = input.tanggal.split('-').map(Number)
+  const tanggal = new Date(Date.UTC(tahun, bulan - 1, hari))
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(input.tanggal) ||
+    tanggal.getUTCFullYear() !== tahun ||
+    tanggal.getUTCMonth() !== bulan - 1 ||
+    tanggal.getUTCDate() !== hari
+  ) {
+    return 'Tanggal harus berformat YYYY-MM-DD.'
+  }
+  if (input.tanggal < hariIniWib()) return 'Tanggal tidak boleh sudah lewat.'
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(input.jam)) return 'Jam harus berformat HH:MM.'
+  const lokasi = input.lokasi.trim()
+  if (lokasi.length < 1 || lokasi.length > LOKASI_JADWAL_MAX) return `Lokasi harus berisi 1-${LOKASI_JADWAL_MAX} karakter.`
+  return null
+}
+
+/**
+ * PUT /api/v1/pendaftaran/jadwal-seleksi-substansi: satu jadwal untuk semua id (jadwal lama diganti).
+ * Ditolak seluruhnya bila ada satu saja yang tidak ditemukan (404) atau tidak berstatus Lolos Seleksi
+ * Administrasi (409). Error 409 & 422 membawa `message` yang bisa langsung ditampilkan (lihat pesanError)
+ */
+export async function simpanJadwalSeleksi(input: JadwalSeleksiInput, signal?: AbortSignal): Promise<void> {
+  await api.put(
+    `${ENDPOINT}/jadwal-seleksi-substansi`,
+    { id_pendaftaran: input.idPendaftar, tanggal: input.tanggal, jam: input.jam, lokasi: input.lokasi.trim() },
+    { signal },
   )
 }
 
-export async function getPendaftarList(filter: PendaftarFilter, halaman: number, rows: number): Promise<PendaftarHalaman> {
-  await delay(400)
-  const hasil = store
-    .filter((item) => cocok(item, filter))
-    .sort((a, b) => Date.parse(b.diajukanPada) - Date.parse(a.diajukanPada))
-  const awal = (halaman - 1) * rows
-  return {
-    items: hasil.slice(awal, awal + rows).map(toPendaftar),
-    total: hasil.length,
-    semua: hasil.map(({ id, status, nama, nim }) => ({ id, status, nama, nim })),
-  }
+/** Batas panjang nama & kontak DPM (karakter), sama dengan backend */
+export const DPM_TEKS_MAX = 255
+
+export type PlottingDpmInput = {
+  idPendaftar: number[]
+  namaDpm: string
+  /** Bebas, mis. email atau nomor HP */
+  kontakDpm: string
 }
 
-/** Ambil data asli dari store & pastikan statusnya sesuai syarat aksi */
-function ambilDenganStatus(ids: string[], status: StatusPendaftaran) {
-  if (ids.length === 0) throw new PendaftarError('Tidak ada pendaftar yang dipilih.')
-  return ids.map((id) => {
-    const item = store.find((pendaftar) => pendaftar.id === id)
-    if (!item) throw new PendaftarError('Sebagian pendaftar tidak ditemukan.')
-    if (item.status !== status) throw new PendaftarError(`${item.nama} tidak berstatus ${status}.`)
-    return item
-  })
+/** Cek input plotting sebelum dikirim, dengan aturan & pesan yang sama seperti 422 backend. null bila valid */
+export function validasiPlottingDpm(input: PlottingDpmInput): string | null {
+  if (input.idPendaftar.length === 0) return 'Pilih minimal satu pendaftaran.'
+  const panjangValid = (teks: string) => teks.trim().length >= 1 && teks.trim().length <= DPM_TEKS_MAX
+  if (!panjangValid(input.namaDpm)) return `Nama DPM harus berisi 1-${DPM_TEKS_MAX} karakter.`
+  if (!panjangValid(input.kontakDpm)) return `Kontak DPM harus berisi 1-${DPM_TEKS_MAX} karakter.`
+  return null
 }
 
-/** Jadwal seleksi substansi yang sama untuk semua pendaftar terpilih (menimpa jadwal lama) */
-export async function simpanJadwalSeleksi(ids: string[], jadwal: JadwalSeleksiSubstansi): Promise<void> {
-  await delay(600)
-  for (const item of ambilDenganStatus(ids, 'Lolos Seleksi Administrasi')) item.jadwalSeleksi = { ...jadwal }
-}
-
-/** Dosen pembimbing yang sama untuk semua pendaftar terpilih (menimpa plotting lama) */
-export async function simpanPlottingDpm(ids: string[], plotting: PlottingDpm): Promise<void> {
-  await delay(600)
-  for (const item of ambilDenganStatus(ids, 'Aktif')) item.plottingDpm = { ...plotting }
-}
-
-/** Satu file surat keterangan per pendaftar */
-export async function simpanSuratKeterangan(berkas: Array<{ id: string; file: File }>): Promise<void> {
-  await delay(800)
-  const items = ambilDenganStatus(berkas.map((item) => item.id), 'Aktif')
-  items.forEach((item, index) => {
-    const { file } = berkas[index]
-    item.suratKeterangan = { nama: file.name, ukuran: file.size }
-  })
-}
-
-export async function getPendaftarDetail(id: string): Promise<PendaftarDetail | null> {
-  await delay(400)
-  const item = store.find((pendaftar) => pendaftar.id === id)
-  return item ? structuredClone(item) : null
-}
-
-/** Ubah status oleh Tim MB; hanya transisi di TRANSISI_TIM_MB yang diizinkan, dan tercatat di log */
-export async function ubahStatusPendaftar(id: string, statusBaru: StatusPendaftaran): Promise<void> {
-  await delay(600)
-  const item = store.find((pendaftar) => pendaftar.id === id)
-  if (!item) throw new PendaftarError('Pendaftar tidak ditemukan.')
-  if (!TRANSISI_TIM_MB[item.status].includes(statusBaru)) {
-    throw new PendaftarError(`Status ${item.status} tidak dapat diubah menjadi ${statusBaru}.`)
-  }
-
-  const sekarang = new Date().toISOString()
-  item.log.push({ id: `lgp-${nextLogId++}`, statusLama: item.status, statusBaru, dibuatPada: sekarang })
-  item.status = statusBaru
-  item.diubahPada = sekarang
+/**
+ * PUT /api/v1/pendaftaran/plot-dpm: satu DPM untuk semua id (plotting lama diganti).
+ * Ditolak seluruhnya bila ada satu saja yang tidak ditemukan (404) atau tidak berstatus Aktif (409).
+ * Error 409 & 422 membawa `message` yang bisa langsung ditampilkan (lihat pesanError)
+ */
+export async function simpanPlottingDpm(input: PlottingDpmInput, signal?: AbortSignal): Promise<void> {
+  await api.put(
+    `${ENDPOINT}/plot-dpm`,
+    { id_pendaftaran: input.idPendaftar, nama_dpm: input.namaDpm.trim(), kontak_dpm: input.kontakDpm.trim() },
+    { signal },
+  )
 }

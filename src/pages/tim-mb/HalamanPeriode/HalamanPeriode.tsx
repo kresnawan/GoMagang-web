@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useFetcher, useLoaderData } from 'react-router'
-import { FormDialog, FormField, TextInput } from '../../../component'
+import { Button, ConfirmDialog, FormDialog, FormField, TextInput } from '../../../component'
 import { cn } from '../../../component/cn'
+import type { Periode } from '../../../services/periode'
 import { GagalMemuat, PageHeading, TambahButton } from '../components'
-import { CATATAN_MAX, formatWaktuPeriode, LABEL_STATUS_PERIODE, type StatusPeriode } from '../periode'
+import { CATATAN_MAX, formatWaktuPeriode, LABEL_STATUS_PERIODE, labelPeriode, type StatusPeriode } from '../periode'
 import { tableClass as t } from '../table'
-import type { action, loader } from './route'
+import { INTENT, type action, type loader } from './route'
 
 const JUDUL = 'Periode Pendaftaran'
 const SUBJUDUL = 'Rentang waktu mahasiswa dapat mendaftar magang.'
@@ -36,7 +37,10 @@ function TambahPeriodeDialog({ onClose }: { onClose: () => void }) {
       cancelLabel="Batal"
       loading={isSaving}
       onCancel={onClose}
-      onSubmit={(formData) => fetcher.submit(formData, { method: 'post' })}
+      onSubmit={(formData) => {
+        formData.set('intent', INTENT.tambah)
+        fetcher.submit(formData, { method: 'post' })
+      }}
     >
       <FormField label="Catatan (opsional)" htmlFor="catatan">
         <TextInput id="catatan" name="catatan" maxLength={CATATAN_MAX} placeholder="mis. Periode Genap 2026/2027" />
@@ -63,10 +67,86 @@ function TambahPeriodeDialog({ onClose }: { onClose: () => void }) {
   )
 }
 
+type Operasi = { intent: typeof INTENT.mulai | typeof INTENT.tutup; periode: Periode }
+
+/** Konfirmasi mulai / tutup periode saat ini juga. Dipasang hanya saat dibuka */
+function UbahStatusDialog({ operasi, onClose }: { operasi: Operasi; onClose: () => void }) {
+  const fetcher = useFetcher<typeof action>()
+  const isSaving = fetcher.state !== 'idle'
+  const result = fetcher.state === 'idle' ? fetcher.data : undefined
+  const { intent, periode } = operasi
+  const mulai = intent === INTENT.mulai
+
+  useEffect(() => {
+    if (result?.ok) onClose()
+  }, [result, onClose])
+
+  return (
+    <ConfirmDialog
+      open
+      title={mulai ? 'Mulai periode sekarang?' : 'Tutup periode sekarang?'}
+      confirmLabel={isSaving ? 'Memproses...' : mulai ? 'Ya, mulai sekarang' : 'Ya, tutup sekarang'}
+      cancelLabel="Batal"
+      loading={isSaving}
+      onCancel={onClose}
+      onConfirm={() => fetcher.submit({ intent, id: periode.id }, { method: 'post' })}
+    >
+      <p className="mb-3 font-bold text-brand-900">{labelPeriode(periode)}</p>
+      {mulai ? (
+        <p>
+          Pendaftaran langsung dibuka untuk mahasiswa. Waktu mulai diubah menjadi saat ini, sedangkan waktu tutup tetap{' '}
+          <strong>{formatWaktuPeriode(periode.waktuTutup)} WIB</strong>.
+        </p>
+      ) : (
+        <>
+          <p className="mb-2">
+            Pendaftaran langsung ditutup: mahasiswa tidak bisa lagi melihat lowongan dan mendaftar di periode ini.
+            Pendaftaran yang sudah masuk tetap ada.
+          </p>
+          <p>
+            <strong>Periode yang sudah ditutup tidak bisa dimulai lagi.</strong>
+          </p>
+        </>
+      )}
+      {result && !result.ok && (
+        <p role="alert" className="mt-3 text-red-600">
+          {result.error}
+        </p>
+      )}
+    </ConfirmDialog>
+  )
+}
+
+/** Tombol di kolom Aksi: mulai untuk periode akan datang, tutup untuk yang berjalan */
+function AksiPeriode({ periode, onPilih }: { periode: Periode; onPilih: (operasi: Operasi) => void }) {
+  if (periode.status === 'belum_dimulai') {
+    return (
+      <Button type="button" className="whitespace-nowrap px-3 py-1.5 text-sm" onClick={() => onPilih({ intent: INTENT.mulai, periode })}>
+        Mulai sekarang
+      </Button>
+    )
+  }
+  if (periode.status === 'berlangsung') {
+    return (
+      <Button
+        type="button"
+        variant="outlined"
+        className="whitespace-nowrap border-red-700 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50"
+        onClick={() => onPilih({ intent: INTENT.tutup, periode })}
+      >
+        Tutup sekarang
+      </Button>
+    )
+  }
+  return null
+}
+
 export function HalamanPeriode() {
   const periode = useLoaderData<typeof loader>()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [operasi, setOperasi] = useState<Operasi | null>(null)
   const closeDialog = useCallback(() => setDialogOpen(false), [])
+  const closeOperasi = useCallback(() => setOperasi(null), [])
 
   return (
     <>
@@ -86,6 +166,9 @@ export function HalamanPeriode() {
                 <th scope="col" className={cn(t.th, 'hidden md:table-cell')}>Waktu Mulai</th>
                 <th scope="col" className={cn(t.th, 'hidden md:table-cell')}>Waktu Tutup</th>
                 <th scope="col" className={cn(t.th, 'w-32')}>Status</th>
+                <th scope="col" className={cn(t.th, 'w-36')}>
+                  <span className="sr-only">Aksi</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -110,12 +193,15 @@ export function HalamanPeriode() {
                         {status}
                       </span>
                     </td>
+                    <td className={cn(t.td, 'text-right')}>
+                      <AksiPeriode periode={item} onPilih={setOperasi} />
+                    </td>
                   </tr>
                 )
               })}
               {periode.length === 0 && (
                 <tr>
-                  <td colSpan={4} className={t.empty}>Belum ada periode pendaftaran.</td>
+                  <td colSpan={5} className={t.empty}>Belum ada periode pendaftaran.</td>
                 </tr>
               )}
             </tbody>
@@ -124,6 +210,7 @@ export function HalamanPeriode() {
       </section>
 
       {dialogOpen && <TambahPeriodeDialog onClose={closeDialog} />}
+      {operasi && <UbahStatusDialog key={`${operasi.intent}-${operasi.periode.id}`} operasi={operasi} onClose={closeOperasi} />}
     </>
   )
 }

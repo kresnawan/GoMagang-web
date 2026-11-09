@@ -1,5 +1,4 @@
-import type { StatusPeriode as StatusPeriodeApi } from '../../services/periode'
-import type { PeriodePendaftaran } from '../../services/posisiMagang'
+import type { Periode, StatusPeriode as StatusPeriodeApi } from '../../services/periode'
 
 // Waktu periode disimpan & ditampilkan dalam WIB, apa pun zona waktu browser
 const ZONA = 'Asia/Jakarta'
@@ -20,7 +19,7 @@ export function wibKeIso(value: FormDataEntryValue | null) {
 }
 
 /** "Periode Ganjil 2026/2027 (1 Okt – 30 Nov 2026)" */
-export function labelPeriode(periode: Pick<PeriodePendaftaran, 'catatan' | 'waktuMulai' | 'waktuTutup'>) {
+export function labelPeriode(periode: Pick<Periode, 'catatan' | 'waktuMulai' | 'waktuTutup'>) {
   const rentang = tanggalFormat.formatRange(new Date(periode.waktuMulai), new Date(periode.waktuTutup))
   return periode.catatan ? `${periode.catatan} (${rentang})` : rentang
 }

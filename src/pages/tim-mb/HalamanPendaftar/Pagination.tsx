@@ -12,8 +12,10 @@ type PaginationProps = {
 export function Pagination({ total, rows, halaman }: PaginationProps) {
   const [, setSearchParams] = useSearchParams()
   const jumlahHalaman = Math.max(1, Math.ceil(total / rows))
-  const awal = total === 0 ? 0 : (halaman - 1) * rows + 1
-  const akhir = Math.min(halaman * rows, total)
+  // Halaman di luar jangkauan (mis. dari URL lama) tetap valid di backend tapi kosong
+  const diLuarJangkauan = halaman > jumlahHalaman
+  const awal = total === 0 || diLuarJangkauan ? 0 : (halaman - 1) * rows + 1
+  const akhir = diLuarJangkauan ? 0 : Math.min(halaman * rows, total)
 
   function setParam(updates: Record<string, string | null>) {
     setSearchParams((prev) => {
@@ -32,7 +34,7 @@ export function Pagination({ total, rows, halaman }: PaginationProps) {
         Rows
         <DropDown
           value={rows}
-          onChange={(event) => setParam({ [PARAM.rows]: event.target.value, [PARAM.halaman]: null })}
+          onChange={(event) => setParam({ [PARAM.r]: event.target.value, [PARAM.p]: null })}
           className="w-24 py-1 pr-8"
         >
           {ROWS_OPTIONS.map((option) => (
@@ -53,7 +55,8 @@ export function Pagination({ total, rows, halaman }: PaginationProps) {
           className="px-3 py-1"
           aria-label="Halaman sebelumnya"
           disabled={halaman <= 1}
-          onClick={() => setParam({ [PARAM.halaman]: String(halaman - 1) })}
+          // Dari halaman di luar jangkauan, langsung ke halaman terakhir
+          onClick={() => setParam({ [PARAM.p]: String(Math.min(halaman - 1, jumlahHalaman)) })}
         >
           ‹
         </Button>
@@ -63,7 +66,7 @@ export function Pagination({ total, rows, halaman }: PaginationProps) {
           className="px-3 py-1"
           aria-label="Halaman berikutnya"
           disabled={halaman >= jumlahHalaman}
-          onClick={() => setParam({ [PARAM.halaman]: String(halaman + 1) })}
+          onClick={() => setParam({ [PARAM.p]: String(halaman + 1) })}
         >
           ›
         </Button>

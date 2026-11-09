@@ -32,17 +32,17 @@ export async function action({ request }: ActionFunctionArgs) {
   const input = {
     posisi: get('posisi'),
     deskripsiPersyaratan: get('deskripsiPersyaratan'),
-    kuotaTotal: Number(get('kuotaTotal')),
+    kuota: Number(get('kuota')),
     idPerusahaan: toId(get('idPerusahaan')),
     idPeriode: toId(get('idPeriode')),
   }
 
   // Validasi ulang (validasi native browser bisa dilewati); aturan sama dengan backend
-  if (!input.posisi || !input.deskripsiPersyaratan || !get('kuotaTotal')) return gagal('Semua kolom wajib diisi.', 400)
+  if (!input.posisi || !input.deskripsiPersyaratan || !get('kuota')) return gagal('Semua kolom wajib diisi.', 400)
   if (Number.isNaN(input.idPerusahaan)) return gagal('Pilih perusahaan.', 400)
   if (Number.isNaN(input.idPeriode)) return gagal('Pilih periode.', 400)
   if ([...input.posisi].length > NAMA_POSISI_MAX) return gagal(`Nama posisi maksimal ${NAMA_POSISI_MAX} karakter.`, 400)
-  if (!Number.isSafeInteger(input.kuotaTotal) || input.kuotaTotal < 1) {
+  if (!Number.isSafeInteger(input.kuota) || input.kuota < 1) {
     return gagal('Kuota harus bilangan bulat minimal 1.', 400)
   }
 

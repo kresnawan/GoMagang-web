@@ -1,6 +1,4 @@
 // Periode pendaftaran: GET & POST /api/v1/periode.
-// Catatan: dropdown periode di Pendaftar masih memakai mock di services/posisiMagang.ts
-// sampai data pendaftar Tim MB ikut disambungkan ke backend.
 
 import { api } from './http'
 
@@ -60,5 +58,23 @@ export async function tambahPeriode(input: PeriodeInput, signal?: AbortSignal): 
     { catatan: input.catatan, waktu_mulai: input.waktuMulai, waktu_tutup: input.waktuTutup },
     { signal },
   )
+  return toPeriode(data)
+}
+
+/**
+ * PATCH /api/v1/periode/{id}/start: mulai saat ini juga (waktu_mulai = sekarang). Hanya untuk status belum_dimulai.
+ * 409 (sudah berjalan/selesai, atau beririsan dengan periode lain) membawa `message` (lihat pesanError)
+ */
+export async function mulaiPeriode(id: number, signal?: AbortSignal): Promise<Periode> {
+  const { data } = await api.patch<PeriodeResponse>(`${ENDPOINT}/${id}/start`, undefined, { signal })
+  return toPeriode(data)
+}
+
+/**
+ * PATCH /api/v1/periode/{id}/stop: tutup saat ini juga (waktu_tutup = sekarang). Hanya untuk status berlangsung,
+ * dan tidak bisa dimulai lagi sesudahnya. 409 membawa `message` (lihat pesanError)
+ */
+export async function tutupPeriode(id: number, signal?: AbortSignal): Promise<Periode> {
+  const { data } = await api.patch<PeriodeResponse>(`${ENDPOINT}/${id}/stop`, undefined, { signal })
   return toPeriode(data)
 }

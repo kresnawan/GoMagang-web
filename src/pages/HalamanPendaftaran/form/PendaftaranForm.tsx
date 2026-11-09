@@ -1,13 +1,14 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useFetcher, useLocation, useNavigate } from 'react-router'
 import { Button, ConfirmDialog, FileInput, FormField } from '../../../component'
-import { MAX_FILE_SIZE, sisaKuota, type Lowongan } from '../../../services/lowongan'
+import { MAX_FILE_SIZE, type Posisi } from '../../../services/lowongan'
+import { MAX_BERKAS_TAMBAHAN } from '../../../services/pendaftaran'
 import { DAFTAR_LOWONGAN_PATH, type PendaftaranNavState } from '../navigation'
-import { BERKAS, validatePendaftaranForm } from './form'
+import { BERKAS, BERKAS_TAMBAHAN, getBerkasTambahan, validatePendaftaranForm } from './form'
 import type { action } from './route'
 
 export type PendaftaranFormProps = {
-  lowongan: Lowongan
+  lowongan: Posisi
 }
 
 export function PendaftaranForm({ lowongan }: PendaftaranFormProps) {
@@ -21,7 +22,6 @@ export function PendaftaranForm({ lowongan }: PendaftaranFormProps) {
   const backTo = DAFTAR_LOWONGAN_PATH + ((location.state as PendaftaranNavState | null)?.listSearch ?? '')
   const isSending = fetcher.state !== 'idle'
   const actionError = fetcher.state === 'idle' && fetcher.data && !fetcher.data.ok ? fetcher.data.error : null
-  const isFull = sisaKuota(lowongan) <= 0
 
   // Berhasil: kembali ke daftar lowongan dengan pesan sukses.
   // replace agar tombol back browser tidak kembali ke form yang sudah terkirim.
@@ -36,21 +36,13 @@ export function PendaftaranForm({ lowongan }: PendaftaranFormProps) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
-    // const validationError = validatePendaftaranForm(formData)
-    // setError(validationError)
-    // if (!validationError) {
-    //   fetcher.reset()
-    //   setPending(formData)
-    // }
-
-    // formData.forEach((v, k, p) => {
-    //   console.log(v);
-    //   console.log(k);
-    //   console.log(p);
-    //   console.log();
-    // });
-
-    alert("Berhasil")
+    const validationError = validatePendaftaranForm(formData)
+    setError(validationError)
+    if (!validationError) {
+      // Lolos validasi: tampilkan dialog konfirmasi; dikirim ke backend setelah dikonfirmasi
+      fetcher.reset()
+      setPending(formData)
+    }
   }
 
   return (
@@ -64,12 +56,21 @@ export function PendaftaranForm({ lowongan }: PendaftaranFormProps) {
               accept=".pdf,application/pdf"
               hint={`(.pdf, maks. ${MAX_FILE_SIZE / 1024 / 1024} MB)`}
               required
-              disabled={isFull}
             />
           </FormField>
         ))}
 
-        {isFull && <p className="text-red-600">Kuota lowongan ini sudah penuh.</p>}
+        <FormField label={`${BERKAS_TAMBAHAN.label} (opsional)`} htmlFor={BERKAS_TAMBAHAN.name}>
+          <FileInput
+            id={BERKAS_TAMBAHAN.name}
+            name={BERKAS_TAMBAHAN.name}
+            accept=".pdf,application/pdf"
+            multiple
+            label="Tambahkan File"
+            hint={`(.pdf, maks. ${MAX_FILE_SIZE / 1024 / 1024} MB per file, maks. ${MAX_BERKAS_TAMBAHAN} file)`}
+          />
+        </FormField>
+
         {error && (
           <p role="alert" className="text-red-600">
             {error}
@@ -77,9 +78,7 @@ export function PendaftaranForm({ lowongan }: PendaftaranFormProps) {
         )}
 
         <div className="flex flex-wrap gap-3 pt-6">
-          <Button type="submit" disabled={isFull}>
-            Submit
-          </Button>
+          <Button type="submit">Submit</Button>
           <Button type="button" variant="outlined" onClick={() => navigate(backTo)}>
             Kembali
           </Button>
@@ -109,6 +108,18 @@ export function PendaftaranForm({ lowongan }: PendaftaranFormProps) {
               <dd className="min-w-0 break-all">{(pending?.get(berkas.name) as File | null)?.name}</dd>
             </div>
           ))}
+          <dt className="font-bold text-brand-700">{BERKAS_TAMBAHAN.label}</dt>
+          <dd className="min-w-0 break-all">
+            {pending && getBerkasTambahan(pending).length > 0 ? (
+              <ul className="flex flex-col gap-1">
+                {getBerkasTambahan(pending).map((file, index) => (
+                  <li key={`${file.name}-${index}`}>{file.name}</li>
+                ))}
+              </ul>
+            ) : (
+              <span className="text-brand-500">Tidak ada</span>
+            )}
+          </dd>
         </dl>
         {actionError && (
           <p role="alert" className="mt-4 text-red-600">

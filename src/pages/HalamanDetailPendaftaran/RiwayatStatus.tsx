@@ -1,8 +1,9 @@
-import { buttonClass } from '../../component'
+import type { ReactNode } from 'react'
 import { cn } from '../../component/cn'
 import type { LogStatus, PendaftaranDetail } from '../../services/pendaftaran'
-import { formatTanggalJadwal, formatUkuran, formatWaktu } from './format'
+import { formatTanggalJadwal, formatWaktu } from './format'
 import { KonfirmasiPenerimaan } from './KonfirmasiPenerimaan'
+import { UnduhSuratKeterangan } from './UnduhSuratKeterangan'
 
 /** Section kanan: riwayat status. Urut bawah ke atas — paling lama di bawah, terbaru di atas */
 export function RiwayatStatus({ pendaftaran }: { pendaftaran: PendaftaranDetail }) {
@@ -57,18 +58,27 @@ function LogItem({ log, pendaftaran, isLatest, isLast }: LogItemProps) {
   )
 }
 
-/** Info tambahan di titik log tertentu */
+/**
+ * Info tambahan di titik log tertentu. Jadwal seleksi dan plotting DPM selalu ditampilkan (atau pesan
+ * "belum ditambahkan"), termasuk setelah pendaftaran lanjut ke tahap berikutnya. Surat keterangan berupa
+ * tombol unduh (lihat UnduhSuratKeterangan)
+ */
 function LogInfo({ log, pendaftaran }: { log: LogStatus; pendaftaran: PendaftaranDetail }) {
-  if (log.statusBaru === 'Lolos Seleksi Administrasi' && pendaftaran.jadwalSeleksi) {
+  if (log.statusBaru === 'Lolos Seleksi Administrasi') {
     const jadwal = pendaftaran.jadwalSeleksi
     return (
-      <div className="mt-2 text-sm text-brand-900">
-        <p className="font-bold text-brand-700">Jadwal Seleksi Substansi</p>
-        <p>
-          {formatTanggalJadwal(jadwal.tanggal)}, pukul {jadwal.jam.replace(':', '.')}
-        </p>
-        <p>{jadwal.lokasi}</p>
-      </div>
+      <InfoBlok judul="Jadwal Seleksi Substansi" className="mt-2">
+        {jadwal ? (
+          <>
+            <p>
+              {formatTanggalJadwal(jadwal.tanggal)}, pukul {jadwal.jam.replace(':', '.')}
+            </p>
+            <p>{jadwal.lokasi}</p>
+          </>
+        ) : (
+          <BelumAda>Jadwal seleksi substansi belum ditambahkan.</BelumAda>
+        )}
+      </InfoBlok>
     )
   }
 
@@ -77,33 +87,38 @@ function LogInfo({ log, pendaftaran }: { log: LogStatus; pendaftaran: Pendaftara
   }
 
   if (log.statusBaru === 'Aktif') {
-    const { suratKeterangan, plottingDpm } = pendaftaran
+    const { plottingDpm } = pendaftaran
     return (
-      <div className="mt-3 flex flex-col gap-4 text-sm text-brand-900">
-        <div>
-          <p className="mb-1.5 font-bold text-brand-700">Surat Keterangan Kepesertaan Magang</p>
-          {suratKeterangan ? (
-            <a href={suratKeterangan.url} download={suratKeterangan.nama} className={buttonClass('outlined', 'px-5 py-2')}>
-              Unduh Surat (PDF, {formatUkuran(suratKeterangan.ukuran)})
-            </a>
-          ) : (
-            <p className="text-brand-500">Belum tersedia.</p>
-          )}
-        </div>
-        <div>
-          <p className="mb-1 font-bold text-brand-700">Dosen Pembimbing Magang</p>
+      <div className="mt-3 flex flex-col gap-4">
+        <InfoBlok judul="Plotting DPM">
           {plottingDpm ? (
             <>
               <p>{plottingDpm.nama}</p>
               <p className="break-all text-brand-500">{plottingDpm.kontak}</p>
             </>
           ) : (
-            <p className="text-brand-500">Belum ditentukan.</p>
+            <BelumAda>Plotting DPM belum ditambahkan.</BelumAda>
           )}
+        </InfoBlok>
+        <div className="text-sm text-brand-900">
+          <UnduhSuratKeterangan pendaftaran={pendaftaran} />
         </div>
       </div>
     )
   }
 
   return null
+}
+
+function InfoBlok({ judul, className, children }: { judul: string; className?: string; children: ReactNode }) {
+  return (
+    <div className={cn('text-sm text-brand-900', className)}>
+      <p className="mb-1 font-bold text-brand-700">{judul}</p>
+      {children}
+    </div>
+  )
+}
+
+function BelumAda({ children }: { children: ReactNode }) {
+  return <p className="text-brand-500 italic">{children}</p>
 }

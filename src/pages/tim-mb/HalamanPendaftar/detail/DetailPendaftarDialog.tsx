@@ -2,16 +2,19 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { useFetcher } from 'react-router'
 import { Button, ConfirmDialog, Dialog } from '../../../../component'
 import { cn } from '../../../../component/cn'
+import { pesanError } from '../../../../services/http'
 import type { LogStatus, StatusPendaftaran } from '../../../../services/pendaftaran'
-import { TRANSISI_TIM_MB, type PendaftarDetail } from '../../../../services/pendaftar'
-import type { PeriodePendaftaran } from '../../../../services/posisiMagang'
+import { unduhBerkas } from '../../../../services/berkas'
+import { TRANSISI_TIM_MB, type BerkasPendaftar, type PendaftarDetail } from '../../../../services/pendaftar'
+import type { Periode } from '../../../../services/periode'
 import { formatTanggal, formatTanggalJadwal, formatUkuran, formatWaktu } from '../../../HalamanDetailPendaftaran/format'
 import { labelPeriode } from '../../periode'
+import { AksiJadwalSeleksi, AksiPlottingDpm } from './AksiTahap'
 import { detailPendaftarPath, type action, type loader } from './route'
 
 export type DetailPendaftarDialogProps = {
-  idPendaftar: string
-  periode: PeriodePendaftaran[]
+  idPendaftar: number
+  periode: Periode[]
   onClose: () => void
 }
 
@@ -79,19 +82,19 @@ function DataDiri({ detail }: { detail: PendaftarDetail }) {
         items={[
           ['Nama Lengkap', detail.nama],
           ['NIM', detail.nim],
-          ['Email', detail.email],
-          ['Jenis Kelamin', detail.jenisKelamin],
-          ['Program Studi', detail.programStudi],
-          ['IPK', detail.ipk.toFixed(2)],
-          ['Semester', detail.semester],
-          ['Nomor HP', detail.nomorHp],
+          ['Email', detail.email ?? '-'],
+          ['Jenis Kelamin', detail.jenisKelamin ?? '-'],
+          ['Program Studi', detail.programStudi ?? '-'],
+          ['IPK', detail.ipk?.toFixed(2) ?? '-'],
+          ['Semester', detail.semester ?? '-'],
+          ['Nomor HP', detail.nomorHp ?? '-'],
         ]}
       />
     </Section>
   )
 }
 
-function DataPendaftaran({ detail, periode }: { detail: PendaftarDetail; periode: PeriodePendaftaran[] }) {
+function DataPendaftaran({ detail, periode }: { detail: PendaftarDetail; periode: Periode[] }) {
   const periodeItem = periode.find((item) => item.id === detail.idPeriode)
   return (
     <Section title="Pendaftaran">
@@ -112,15 +115,54 @@ function Berkas({ detail }: { detail: PendaftarDetail }) {
     <Section title="Berkas yang Diunggah">
       <ul className="flex flex-col gap-2 rounded-sm border border-brand-300 p-3 text-sm">
         {detail.berkas.map((berkas) => (
-          <li key={berkas.jenis}>
-            <p className="text-brand-500">{berkas.jenis}</p>
-            <p className="break-all text-brand-900">
-              {berkas.nama} <span className="text-brand-500">({formatUkuran(berkas.ukuran)})</span>
-            </p>
-          </li>
+          <ItemBerkas key={berkas.id} berkas={berkas} />
         ))}
+        {detail.berkas.length === 0 && <li className="text-brand-500">Tidak ada berkas.</li>}
       </ul>
     </Section>
+  )
+}
+
+function ItemBerkas({ berkas }: { berkas: BerkasPendaftar }) {
+  const [mengunduh, setMengunduh] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleUnduh() {
+    setMengunduh(true)
+    setError(null)
+    try {
+      await unduhBerkas(berkas)
+    } catch (err) {
+      setError(pesanError(err, 'Gagal mengunduh berkas. Coba lagi.'))
+    } finally {
+      setMengunduh(false)
+    }
+  }
+
+  return (
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <div className="min-w-0 flex-1 basis-40">
+        <p className="text-brand-500">{berkas.jenis}</p>
+        <p className="break-all text-brand-900">
+          {berkas.nama} <span className="text-brand-500">({formatUkuran(berkas.ukuran)})</span>
+        </p>
+      </div>
+      <Button
+        type="button"
+        variant="outlined"
+        className="px-3 py-1.5 text-sm"
+        onClick={handleUnduh}
+        disabled={mengunduh}
+        aria-label={`Unduh ${berkas.jenis}`}
+      >
+        {mengunduh ? 'Mengunduh…' : 'Unduh'}
+      </Button>
+      {error && (
+        <p role="alert" className="w-full text-red-600">
+          {error}
+        </p>
+      )}
+    </li>
   )
 }
 
@@ -209,57 +251,71 @@ function BarisTimeline({ titik, garisAtas = false, garisBawah = false, children 
   )
 }
 
+/**
+ * Data tahap di bawah status Lolos Seleksi Administrasi (jadwal seleksi) dan Aktif (plotting DPM).
+ * Selalu ditampilkan, termasuk setelah status terlewat; tombol tambah/unggah hanya ada selama status itu
+ * masih status saat ini
+ */
 function InfoLog({ log, detail }: { log: LogStatus; detail: PendaftarDetail }) {
-  if (log.statusBaru === 'Lolos Seleksi Administrasi' && detail.jadwalSeleksi) {
+  const statusSaatIni = log.statusBaru === detail.status
+
+  if (log.statusBaru === 'Lolos Seleksi Administrasi') {
     const jadwal = detail.jadwalSeleksi
     return (
-      <div className="mt-2 text-sm">
-        <p className="font-bold text-brand-700">Jadwal Seleksi Substansi</p>
-        <p>
-          {formatTanggalJadwal(jadwal.tanggal)}, pukul {jadwal.jam.replace(':', '.')}
-        </p>
-        <p>{jadwal.lokasi}</p>
-      </div>
+      <InfoBlok judul="Jadwal Seleksi Substansi" className="mt-2">
+        {jadwal ? (
+          <>
+            <p>
+              {formatTanggalJadwal(jadwal.tanggal)}, pukul {jadwal.jam.replace(':', '.')}
+            </p>
+            <p>{jadwal.lokasi}</p>
+          </>
+        ) : (
+          <BelumAda>Jadwal seleksi substansi belum ditambahkan.</BelumAda>
+        )}
+        {statusSaatIni && <AksiJadwalSeleksi pendaftar={detail} jadwal={jadwal} />}
+      </InfoBlok>
     )
   }
 
   if (log.statusBaru === 'Aktif') {
+    const { plottingDpm } = detail
     return (
-      <div className="mt-2 flex flex-col gap-2 text-sm">
-        <div>
-          <p className="font-bold text-brand-700">Surat Keterangan Kepesertaan Magang</p>
-          <p className={detail.suratKeterangan ? 'break-all' : 'text-brand-500'}>
-            {detail.suratKeterangan
-              ? `${detail.suratKeterangan.nama} (${formatUkuran(detail.suratKeterangan.ukuran)})`
-              : 'Belum diunggah.'}
+      <InfoBlok judul="Plotting DPM" className="mt-2">
+        {plottingDpm ? (
+          <p>
+            {plottingDpm.nama} <span className="text-brand-500">· {plottingDpm.kontak}</span>
           </p>
-        </div>
-        <div>
-          <p className="font-bold text-brand-700">Dosen Pembimbing Magang</p>
-          {detail.plottingDpm ? (
-            <p>
-              {detail.plottingDpm.nama} <span className="text-brand-500">· {detail.plottingDpm.kontak}</span>
-            </p>
-          ) : (
-            <p className="text-brand-500">Belum ditentukan.</p>
-          )}
-        </div>
-      </div>
+        ) : (
+          <BelumAda>Plotting DPM belum ditambahkan.</BelumAda>
+        )}
+        {statusSaatIni && <AksiPlottingDpm pendaftar={detail} plotting={plottingDpm} />}
+      </InfoBlok>
     )
   }
 
   return null
 }
 
+function InfoBlok({ judul, className, children }: { judul: string; className?: string; children: ReactNode }) {
+  return (
+    <div className={cn('text-sm', className)}>
+      <p className="font-bold text-brand-700">{judul}</p>
+      {children}
+    </div>
+  )
+}
+
+function BelumAda({ children }: { children: ReactNode }) {
+  return <p className="text-brand-500 italic">{children}</p>
+}
+
 /**
  * Pilihan "Status berikutnya?" (transisi yang boleh dilakukan Tim MB), dengan konfirmasi.
- * Diberi key status saat ini, sehingga setelah tersimpan pilihan & dialog mulai dari awal.
+ * Diberi key status saat ini, sehingga setelah tersimpan pilihan mulai dari awal.
  */
 function StatusBerikutnya({ detail, pilihan }: { detail: PendaftarDetail; pilihan: StatusPendaftaran[] }) {
-  const fetcher = useFetcher<typeof action>()
   const [target, setTarget] = useState<StatusPendaftaran | null>(null)
-  const isSaving = fetcher.state !== 'idle'
-  const result = fetcher.state === 'idle' ? fetcher.data : undefined
 
   return (
     <>
@@ -273,10 +329,7 @@ function StatusBerikutnya({ detail, pilihan }: { detail: PendaftarDetail; piliha
               type="button"
               variant={negatif ? 'outlined' : 'fill'}
               className={cn('px-3 py-2.5 text-sm', negatif && 'border-red-700 text-red-700 hover:bg-red-50')}
-              onClick={() => {
-                fetcher.reset()
-                setTarget(status)
-              }}
+              onClick={() => setTarget(status)}
             >
               {status}
             </Button>
@@ -284,28 +337,49 @@ function StatusBerikutnya({ detail, pilihan }: { detail: PendaftarDetail; piliha
         })}
       </div>
 
-      <ConfirmDialog
-        open={target !== null && !result?.ok}
-        title={`Ubah status menjadi ${target}?`}
-        confirmLabel={isSaving ? 'Menyimpan...' : 'Ya, simpan'}
-        cancelLabel="Batal"
-        loading={isSaving}
-        onCancel={() => setTarget(null)}
-        onConfirm={() =>
-          target && fetcher.submit({ statusBaru: target }, { method: 'post', action: detailPendaftarPath(detail.id) })
-        }
-      >
-        <p className="mb-2">
-          Status <strong>{detail.nama}</strong> ({detail.nim}) akan diubah dari <strong>{detail.status}</strong> menjadi{' '}
-          <strong>{target}</strong>.
-        </p>
-        <p>Perubahan ini tidak dapat dibatalkan dan langsung terlihat oleh mahasiswa.</p>
-        {result && !result.ok && (
-          <p role="alert" className="mt-3 text-red-600">
-            {result.error}
-          </p>
-        )}
-      </ConfirmDialog>
+      {target && <KonfirmasiUbahStatus key={target} detail={detail} target={target} onClose={() => setTarget(null)} />}
     </>
+  )
+}
+
+/** Dipasang hanya saat dibuka, sehingga pesan error dari percobaan sebelumnya tidak terbawa */
+function KonfirmasiUbahStatus({
+  detail,
+  target,
+  onClose,
+}: {
+  detail: PendaftarDetail
+  target: StatusPendaftaran
+  onClose: () => void
+}) {
+  const fetcher = useFetcher<typeof action>()
+  const isSaving = fetcher.state !== 'idle'
+  const result = fetcher.state === 'idle' ? fetcher.data : undefined
+
+  useEffect(() => {
+    if (result?.ok) onClose()
+  }, [result, onClose])
+
+  return (
+    <ConfirmDialog
+      open
+      title={`Ubah status menjadi ${target}?`}
+      confirmLabel={isSaving ? 'Menyimpan...' : 'Ya, simpan'}
+      cancelLabel="Batal"
+      loading={isSaving}
+      onCancel={onClose}
+      onConfirm={() => fetcher.submit({ statusBaru: target }, { method: 'post', action: detailPendaftarPath(detail.id) })}
+    >
+      <p className="mb-2">
+        Status <strong>{detail.nama}</strong> ({detail.nim}) akan diubah dari <strong>{detail.status}</strong> menjadi{' '}
+        <strong>{target}</strong>.
+      </p>
+      <p>Perubahan ini tidak dapat dibatalkan dan langsung terlihat oleh mahasiswa.</p>
+      {result && !result.ok && (
+        <p role="alert" className="mt-3 text-red-600">
+          {result.error}
+        </p>
+      )}
+    </ConfirmDialog>
   )
 }

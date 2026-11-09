@@ -4,10 +4,15 @@ import type { Posisi } from '../../../services/lowongan'
 import { LowonganImage } from '../LowonganInfo'
 import type { PendaftaranNavState } from '../navigation'
 
-export function LowonganItem({ posisi }: { posisi: Posisi }) {
+type LowonganItemProps = {
+  posisi: Posisi
+  /** Alasan tombol Daftar nonaktif (sudah didaftar, atau batas pendaftaran berjalan tercapai); null bila aktif */
+  alasanNonaktif: string | null
+}
+
+export function LowonganItem({ posisi, alasanNonaktif }: LowonganItemProps) {
   const navigate = useNavigate()
   const location = useLocation()
-  const tersedia = posisi.sisaKuota > 0
 
   return (
     <li className="flex flex-col gap-4 border-b border-brand-300 py-5 sm:flex-row sm:items-center sm:gap-6">
@@ -23,17 +28,17 @@ export function LowonganItem({ posisi }: { posisi: Posisi }) {
 
       <div className="flex shrink-0 items-center justify-between gap-2 sm:flex-col sm:items-end">
         <p className="text-sm text-brand-500">
-          Kuota: <span className="font-bold text-brand-700">{Math.max(posisi.sisaKuota, 0)}</span>/{posisi.kuotaTotal}{' '}
-          tersisa
+          Kuota: <span className="font-bold text-brand-700">{posisi.kuota}</span> orang
         </p>
         <Button
           type="button"
-          disabled={!tersedia}
+          disabled={alasanNonaktif !== null}
+          title={alasanNonaktif ?? undefined}
           onClick={() =>
             navigate(String(posisi.id), { state: { listSearch: location.search } satisfies PendaftaranNavState })
           }
         >
-          {tersedia ? 'Daftar' : 'Penuh'}
+          Daftar
         </Button>
       </div>
     </li>

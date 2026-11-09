@@ -1,29 +1,37 @@
 import { data, type ActionFunctionArgs, type LoaderFunctionArgs } from 'react-router'
-import { getLowongan } from '../../../services/lowongan'
-import { PendaftaranError, submitPendaftaran } from '../../../services/pendaftaran'
-import { validatePendaftaranForm } from './form'
+import { pesanError } from '../../../services/http'
+import { getPosisi } from '../../../services/lowongan'
+import { alasanTidakBisaDaftar, getPendaftaranBerjalan, kirimPendaftaran } from '../../../services/pendaftaran'
+import { getBerkasTambahan, validatePendaftaranForm } from './form'
 
-export async function loader({ params }: LoaderFunctionArgs) {
-  const lowongan = await getLowongan(params.lowonganId ?? '')
-  if (!lowongan) throw data('Lowongan tidak ditemukan', { status: 404 })
-  return lowongan
+export async function loader({ params, request }: LoaderFunctionArgs) {
+  const [posisi, berjalan] = await Promise.all([
+    getPosisi(Number(params.lowonganId), request.signal),
+    getPendaftaranBerjalan(request.signal),
+  ])
+  if (!posisi) throw data('Lowongan tidak ditemukan', { status: 404 })
+  return { lowongan: posisi, alasanTidakBisaDaftar: alasanTidakBisaDaftar(berjalan, posisi.id) }
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData()
 
+  // Validasi ulang (validasi di form bisa dilewati); isi PDF diperiksa lagi oleh backend
   const error = validatePendaftaranForm(formData)
   if (error) return data({ ok: false as const, error }, { status: 400 })
 
   try {
-    await submitPendaftaran({
-      lowonganId: params.lowonganId ?? '',
-      suratDpa: formData.get('suratDpa') as File,
-      cv: formData.get('cv') as File,
-    })
+    await kirimPendaftaran(
+      {
+        idPosisi: Number(params.lowonganId),
+        suratDpa: formData.get('suratDpa') as File,
+        cv: formData.get('cv') as File,
+        berkasTambahan: getBerkasTambahan(formData),
+      },
+      request.signal,
+    )
     return { ok: true as const }
   } catch (err) {
-    const message = err instanceof PendaftaranError ? err.message : 'Gagal mengirim pendaftaran. Coba lagi.'
-    return data({ ok: false as const, error: message }, { status: 500 })
+    return data({ ok: false as const, error: pesanError(err, 'Gagal mengirim pendaftaran. Coba lagi.') }, { status: 500 })
   }
 }

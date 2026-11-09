@@ -14,7 +14,7 @@ function PosisiCard({ posisi }: { posisi: Posisi }) {
       <h3 className="text-h6 leading-snug text-brand-900">{posisi.posisi}</h3>
       <p className="mt-1 text-brand-700">{posisi.perusahaan}</p>
       <p className="text-sm text-brand-500">
-        Kuota: <span className="font-bold text-brand-700">{Math.max(posisi.sisaKuota, 0)}</span>/{posisi.kuotaTotal} tersisa
+        Kuota: <span className="font-bold text-brand-700">{posisi.kuota}</span> orang
       </p>
     </li>
   )

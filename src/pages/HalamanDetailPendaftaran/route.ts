@@ -1,23 +1,32 @@
+import { isAxiosError } from 'axios'
 import { data, type ActionFunctionArgs, type LoaderFunctionArgs } from 'react-router'
-import { getPendaftaran, konfirmasiPenerimaan, PendaftaranError } from '../../services/pendaftaran'
+import { pesanError } from '../../services/http'
+import { getPendaftaran, konfirmasiPenerimaan } from '../../services/pendaftaran'
 
-export async function loader({ params }: LoaderFunctionArgs) {
-  const pendaftaran = await getPendaftaran(params.idPendaftaran ?? '')
+export async function loader({ params, request }: LoaderFunctionArgs) {
+  const pendaftaran = await getPendaftaran(params.idPendaftaran ?? '', request.signal)
   if (!pendaftaran) throw data('Pendaftaran tidak ditemukan', { status: 404 })
   return pendaftaran
 }
 
+export const INTENT_KONFIRMASI = 'konfirmasi'
+
+const gagal = (error: string, status: number) => data({ ok: false as const, error }, { status })
+
+/** Konfirmasi penerimaan; setelah berhasil, loader memuat ulang detail (status menjadi Aktif) */
 export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData()
-  if (formData.get('intent') !== 'konfirmasi') {
-    return data({ ok: false as const, error: 'Aksi tidak dikenal.' }, { status: 400 })
-  }
+  if (formData.get('intent') !== INTENT_KONFIRMASI) return gagal('Aksi tidak dikenal.', 400)
+
+  const id = Number(params.idPendaftaran)
+  if (!Number.isSafeInteger(id) || id < 1) return gagal('Pendaftaran tidak valid.', 400)
 
   try {
-    await konfirmasiPenerimaan(params.idPendaftaran ?? '')
+    await konfirmasiPenerimaan(id, request.signal)
     return { ok: true as const }
   } catch (err) {
-    const message = err instanceof PendaftaranError ? err.message : 'Gagal mengonfirmasi penerimaan. Coba lagi.'
-    return data({ ok: false as const, error: message }, { status: 500 })
+    const status = isAxiosError(err) ? (err.response?.status ?? 500) : 500
+    if (status === 404 || status === 403) return gagal('Pendaftaran tidak ditemukan.', status)
+    return gagal(pesanError(err, 'Gagal mengonfirmasi penerimaan. Coba lagi.'), status)
   }
 }

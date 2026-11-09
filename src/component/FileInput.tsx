@@ -8,6 +8,15 @@ export type FileInputProps = Omit<ComponentProps<'input'>, 'type'> & {
   hint?: string
 }
 
+/** File yang sama (dipilih dua kali) tidak ditambahkan lagi */
+const fileSama = (a: File, b: File) => a.name === b.name && a.size === b.size && a.lastModified === b.lastModified
+
+function keFileList(files: File[]) {
+  const transfer = new DataTransfer()
+  files.forEach((file) => transfer.items.add(file))
+  return transfer.files
+}
+
 function assignRef<T>(ref: Ref<T> | undefined, value: T | null) {
   if (typeof ref === 'function') ref(value)
   else if (ref) ref.current = value
@@ -19,12 +28,15 @@ export function FileInput({
   hint,
   accept,
   disabled,
+  multiple,
   onChange,
   ref,
   ...props
 }: FileInputProps) {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [files, setFiles] = useState<File[]>([])
+  // true saat isi input diganti dari sini (hapus file), bukan dari pemilih file
+  const menggantiRef = useRef(false)
 
   // Sinkronkan state saat form di-reset
   useEffect(() => {
@@ -36,16 +48,23 @@ export function FileInput({
   }, [])
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
-    setFiles(Array.from(event.target.files ?? []))
+    const input = event.target
+    let dipilih = Array.from(input.files ?? [])
+    // multiple: pilihan baru ditambahkan ke file sebelumnya (pemilih file bawaan browser selalu mengganti)
+    if (multiple && !menggantiRef.current && files.length > 0) {
+      dipilih = [...files, ...dipilih.filter((file) => !files.some((lama) => fileSama(lama, file)))]
+      input.files = keFileList(dipilih)
+    }
+    menggantiRef.current = false
+    setFiles(dipilih)
     onChange?.(event)
   }
 
   function removeFile(index: number) {
     const input = inputRef.current
     if (!input) return
-    const transfer = new DataTransfer()
-    files.forEach((file, i) => i !== index && transfer.items.add(file))
-    input.files = transfer.files
+    input.files = keFileList(files.filter((_, i) => i !== index))
+    menggantiRef.current = true
     // Picu change event native agar onChange milik parent ikut terpanggil
     input.dispatchEvent(new Event('change', { bubbles: true }))
   }
@@ -59,17 +78,18 @@ export function FileInput({
   const hintText = hint ?? (accept ? `(${accept})` : undefined)
 
   return (
-    <div className={cn('w-full', className)}>
+    <div className={cn('flex w-full flex-col gap-2', className)}>
       <div
         className={cn(
           'relative flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-brand-300 bg-white px-4 py-8 text-center text-brand-300 transition-colors',
           'has-[input:hover]:bg-brand-100 has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-brand-300/50',
           disabled && 'cursor-not-allowed bg-brand-200',
-          files.length > 0 && 'hidden',
+          // Satu file: kotak diganti daftar file. Banyak file: kotak mengecil di bawah daftar untuk menambah lagi
+          files.length > 0 && (multiple ? 'order-last border-dashed py-3' : 'hidden'),
         )}
       >
-        <FileIcon className="size-14" />
-        <span className="font-bold">{label}</span>
+        {!(multiple && files.length > 0) && <FileIcon className="size-14" />}
+        <span className="font-bold">{multiple && files.length > 0 ? 'Tambah file lain' : label}</span>
         {hintText && <span className="text-xs">{hintText}</span>}
         <input
           ref={(node) => {
@@ -79,6 +99,7 @@ export function FileInput({
           type="file"
           accept={accept}
           disabled={disabled}
+          multiple={multiple}
           onChange={handleChange}
           className="absolute inset-0 cursor-pointer opacity-0 disabled:cursor-not-allowed"
           {...props}

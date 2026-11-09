@@ -1,20 +1,40 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router'
-import { Button, DropDown, FormField, TextInput } from '../../../component'
-import { STATUS_PENDAFTARAN } from '../../../services/pendaftaran'
-import { KOLOM_CARI } from '../../../services/pendaftar'
-import type { PeriodePendaftaran } from '../../../services/posisiMagang'
+import { DropDown, FormField, TextInput } from '../../../component'
+import type { Posisi } from '../../../services/lowongan'
+import { idStatus, STATUS_PENDAFTARAN } from '../../../services/pendaftaran'
+import type { Periode } from '../../../services/periode'
+import type { Perusahaan } from '../../../services/perusahaan'
 import { labelPeriode } from '../periode'
 import { PARAM, PARAM_FILTER } from './params'
 
-const SEARCH_DELAY = 300
+const SEARCH_DELAY = 600
 
-/** Kata kunci + "Cari berdasarkan" + periode + status. Langsung diterapkan; nilainya disimpan di URL */
-export function FilterPendaftar({ periode }: { periode: PeriodePendaftaran[] }) {
+type FilterPendaftarProps = {
+  periode: Periode[]
+  perusahaan: Perusahaan[]
+  /** Posisi dari semua periode */
+  posisi: Posisi[]
+}
+
+/** Posisi termasuk dalam periode & perusahaan yang sedang dipilih (null/'' = semua) */
+const posisiCocok = (item: Posisi, idPeriode: string | null, idPerusahaan: string | null) =>
+  (!idPeriode || String(item.idPeriode) === idPeriode) && (!idPerusahaan || String(item.idPerusahaan) === idPerusahaan)
+
+/** Cari nama + filter periode, status, perusahaan, posisi. Langsung diterapkan; nilainya disimpan di URL */
+export function FilterPendaftar({ periode, perusahaan, posisi }: FilterPendaftarProps) {
   const [searchParams, setSearchParams] = useSearchParams()
-  // Ganti key → form dipasang ulang dengan nilai default kosong (untuk tombol Reset)
-  const [resetKey, setResetKey] = useState(0)
   const timerRef = useRef<number>(undefined)
+
+  // Pilihan posisi mengikuti periode & perusahaan yang dipilih, dikelompokkan per periode
+  const idPeriode = searchParams.get(PARAM.periode)
+  const idPerusahaan = searchParams.get(PARAM.perusahaan)
+  const grupPosisi = periode
+    .map((item) => ({
+      periode: item,
+      posisi: posisi.filter((p) => p.idPeriode === item.id && posisiCocok(p, idPeriode, idPerusahaan)),
+    }))
+    .filter((grup) => grup.posisi.length > 0)
 
   useEffect(() => () => window.clearTimeout(timerRef.current), [])
 
@@ -29,13 +49,20 @@ export function FilterPendaftar({ periode }: { periode: PeriodePendaftaran[] }) 
           if (value) next.set(key, value)
           else next.delete(key)
         }
-        next.delete(PARAM.halaman) // filter baru → kembali ke halaman 1
+        // Posisi yang tidak termasuk periode/perusahaan baru dilepas, agar daftarnya tidak kosong tanpa alasan
+        const idPosisi = next.get(PARAM.posisi)
+        const item = posisi.find((p) => String(p.id) === idPosisi)
+        if (idPosisi && !(item && posisiCocok(item, next.get(PARAM.periode), next.get(PARAM.perusahaan)))) {
+          next.delete(PARAM.posisi)
+        }
+        next.delete(PARAM.p) // filter baru → kembali ke halaman 1
         return next
       },
       { replace: true },
     )
   }
 
+  // Ketik: tunggu sebentar agar tidak memanggil backend tiap huruf. Dropdown: langsung
   function handleChange(event: FormEvent<HTMLFormElement>) {
     const form = event.currentTarget
     const isTyping = (event.target as HTMLElement).tagName === 'INPUT'
@@ -43,22 +70,8 @@ export function FilterPendaftar({ periode }: { periode: PeriodePendaftaran[] }) 
     timerRef.current = window.setTimeout(() => apply(form), isTyping ? SEARCH_DELAY : 0)
   }
 
-  function reset() {
-    window.clearTimeout(timerRef.current)
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev)
-        for (const key of [...PARAM_FILTER, PARAM.halaman]) next.delete(key)
-        return next
-      },
-      { replace: true },
-    )
-    setResetKey((key) => key + 1)
-  }
-
   return (
     <form
-      key={resetKey}
       role="search"
       onChange={handleChange}
       onSubmit={(event) => {
@@ -69,21 +82,12 @@ export function FilterPendaftar({ periode }: { periode: PeriodePendaftaran[] }) 
     >
       <TextInput
         type="search"
-        name={PARAM.q}
-        aria-label="Kata kunci"
-        placeholder="Masukkan kata kunci..."
-        defaultValue={searchParams.get(PARAM.q) ?? ''}
+        name={PARAM.s}
+        aria-label="Cari berdasarkan nama"
+        placeholder="Cari berdasarkan nama..."
+        defaultValue={searchParams.get(PARAM.s) ?? ''}
       />
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto]">
-        <FormField label="Cari berdasarkan" htmlFor="filter-cari">
-          <DropDown id="filter-cari" name={PARAM.cariBerdasarkan} defaultValue={searchParams.get(PARAM.cariBerdasarkan) ?? 'nama'}>
-            {KOLOM_CARI.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </DropDown>
-        </FormField>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <FormField label="Periode" htmlFor="filter-periode">
           <DropDown id="filter-periode" name={PARAM.periode} defaultValue={searchParams.get(PARAM.periode) ?? ''}>
             <option value="">Semua periode</option>
@@ -98,13 +102,36 @@ export function FilterPendaftar({ periode }: { periode: PeriodePendaftaran[] }) 
           <DropDown id="filter-status" name={PARAM.status} defaultValue={searchParams.get(PARAM.status) ?? ''}>
             <option value="">Semua status</option>
             {STATUS_PENDAFTARAN.map((status) => (
-              <option key={status}>{status}</option>
+              <option key={status} value={idStatus(status)}>
+                {status}
+              </option>
             ))}
           </DropDown>
         </FormField>
-        <Button type="button" variant="outlined" className="self-end px-5 py-1.5" onClick={reset}>
-          Reset
-        </Button>
+        <FormField label="Perusahaan" htmlFor="filter-perusahaan">
+          <DropDown id="filter-perusahaan" name={PARAM.perusahaan} defaultValue={searchParams.get(PARAM.perusahaan) ?? ''}>
+            <option value="">Semua perusahaan</option>
+            {perusahaan.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.nama}
+              </option>
+            ))}
+          </DropDown>
+        </FormField>
+        <FormField label="Posisi magang" htmlFor="filter-posisi">
+          <DropDown id="filter-posisi" name={PARAM.posisi} defaultValue={searchParams.get(PARAM.posisi) ?? ''}>
+            <option value="">Semua posisi</option>
+            {grupPosisi.map((grup) => (
+              <optgroup key={grup.periode.id} label={labelPeriode(grup.periode)}>
+                {grup.posisi.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.posisi} ({item.perusahaan})
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </DropDown>
+        </FormField>
       </div>
     </form>
   )

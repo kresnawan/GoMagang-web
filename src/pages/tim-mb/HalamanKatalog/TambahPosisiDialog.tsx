@@ -60,8 +60,8 @@ export function TambahPosisiDialog({ periode, perusahaan, idPeriodeAwal, onClose
         </DropDown>
       </FormField>
 
-      <FormField label="Kuota" htmlFor="kuotaTotal">
-        <TextInput id="kuotaTotal" name="kuotaTotal" type="number" required min={1} step={1} inputMode="numeric" />
+      <FormField label="Kuota penerimaan" htmlFor="kuota">
+        <TextInput id="kuota" name="kuota" type="number" required min={1} step={1} inputMode="numeric" />
       </FormField>
 
       <FormField label="Periode" htmlFor="idPeriode">

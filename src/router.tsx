@@ -9,10 +9,12 @@ import { konversiMkRoute } from './pages/HalamanKonversiMK'
 import { loginRoute } from './pages/HalamanLogin'
 import { daftarLowonganRoute, formPendaftaranRoute, wajibDataDiriLengkap } from './pages/HalamanPendaftaran'
 import { katalogRoute } from './pages/tim-mb/HalamanKatalog'
-import { pendaftarRoute } from './pages/tim-mb/HalamanPendaftar'
+import { pendaftarLayoutRoute, pendaftarRoute } from './pages/tim-mb/HalamanPendaftar'
 import { detailPendaftarRoute } from './pages/tim-mb/HalamanPendaftar/detail'
 import { periodeRoute } from './pages/tim-mb/HalamanPeriode'
 import { perusahaanRoute } from './pages/tim-mb/HalamanPerusahaan'
+import { verifikasiSuratRoute } from './pages/HalamanVerifikasiSurat'
+import { berkasPublikRoute } from './pages/HalamanBerkasPublik'
 import { loginLoader, sesiLoader, wajibPeran } from './routeGuard'
 
 export const router = createBrowserRouter([
@@ -57,6 +59,7 @@ export const router = createBrowserRouter([
       { path: 'periode', ...periodeRoute },
       {
         path: 'pendaftar',
+        ...pendaftarLayoutRoute,
         children: [
           { index: true, ...pendaftarRoute },
           { path: ':idPendaftar', ...detailPendaftarRoute },
@@ -65,6 +68,10 @@ export const router = createBrowserRouter([
     ],
   },
   { path: '/login', ...loginRoute, loader: loginLoader, HydrateFallback: MemuatSesi },
+  // Tujuan QR pada surat keterangan magang (publik, tanpa guard)
+  { path: '/verifikasi-surat', ...verifikasiSuratRoute },
+  // Tujuan link berkas di file Excel hasil ekspor Tim MB (publik, tanpa guard)
+  { path: '/berkas/:token', ...berkasPublikRoute },
   // Playground komponen UI (publik, tanpa guard)
   { path: '/komponen', Component: App },
 ])

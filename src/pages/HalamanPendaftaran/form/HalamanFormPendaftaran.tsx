@@ -8,8 +8,28 @@ function PageHeading() {
   return <h1 className="mb-8 text-h5 text-brand-700">Formulir Pendaftaran</h1>
 }
 
+/** Dibuka langsung lewat URL padahal tidak bisa mendaftar di sini (tombol Daftar di daftar lowongan nonaktif) */
+function TidakBisaDaftar({ alasan }: { alasan: string }) {
+  return (
+    <div role="status" className="max-w-3xl rounded-sm border border-brand-300 bg-brand-50 px-4 py-4 text-brand-700">
+      <p className="font-bold">{alasan}</p>
+      <p className="mt-1 text-sm">
+        Pantau statusnya di{' '}
+        <Link to="/dasbor" className="font-bold underline">
+          Dasbor
+        </Link>
+        , atau{' '}
+        <Link to={DAFTAR_LOWONGAN_PATH} className="font-bold underline">
+          pilih lowongan lain
+        </Link>
+        .
+      </p>
+    </div>
+  )
+}
+
 export function HalamanFormPendaftaran() {
-  const lowongan = useLoaderData<typeof loader>()
+  const { lowongan, alasanTidakBisaDaftar } = useLoaderData<typeof loader>()
 
   return (
     <>
@@ -22,7 +42,11 @@ export function HalamanFormPendaftaran() {
         <LowonganImage lowongan={lowongan} className="sm:w-52" />
         <LowonganInfo lowongan={lowongan} />
       </section>
-      <PendaftaranForm lowongan={lowongan} />
+      {alasanTidakBisaDaftar ? (
+        <TidakBisaDaftar alasan={alasanTidakBisaDaftar} />
+      ) : (
+        <PendaftaranForm lowongan={lowongan} />
+      )}
     </>
   )
 }

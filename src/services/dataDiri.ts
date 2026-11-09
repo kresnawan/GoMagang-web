@@ -64,7 +64,7 @@ type MahasiswaResponse = {
   semester: number | null
 }
 
-const JENIS_KELAMIN_DARI_KODE: Record<string, JenisKelamin> = { L: 'Laki-laki', P: 'Perempuan' }
+export const JENIS_KELAMIN_DARI_KODE: Record<string, JenisKelamin> = { L: 'Laki-laki', P: 'Perempuan' }
 const KODE_JENIS_KELAMIN: Record<JenisKelamin, 'L' | 'P'> = { 'Laki-laki': 'L', Perempuan: 'P' }
 
 const ENDPOINT = '/api/v1/mahasiswa/data'

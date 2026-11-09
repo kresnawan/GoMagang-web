@@ -1,7 +1,7 @@
+import type { LoaderFunctionArgs } from 'react-router'
 import { getPendaftaranList } from '../../services/pendaftaran'
 
-/** Dasbor hanya menampilkan pendaftaran yang masih berjalan (maksimal 2) */
-export async function loader() {
-  const pendaftaran = await getPendaftaranList()
-  return pendaftaran
+/** Semua pendaftaran milik mahasiswa yang login (semua status), dari yang paling baru */
+export async function loader({ request }: LoaderFunctionArgs) {
+  return getPendaftaranList(request.signal)
 }
