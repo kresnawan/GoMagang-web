@@ -16,4 +16,5 @@ export const TIM_MB_MENU_ITEMS: MenuItem[] = [
   { label: 'Katalog Posisi', to: '/tim-mb/katalog' },
   { label: 'Perusahaan Mitra', to: '/tim-mb/perusahaan' },
   { label: 'Periode', to: '/tim-mb/periode' },
+  { label: 'Konversi MK', to: '/tim-mb/konversi-mk' },
 ]

@@ -5,7 +5,7 @@ import { NAMA_POSISI_MAX } from '../../../services/lowongan'
 import type { Periode } from '../../../services/periode'
 import type { Perusahaan } from '../../../services/perusahaan'
 import { labelPeriode } from '../periode'
-import type { action } from './route'
+import { INTENT, type action } from './route'
 
 export type TambahPosisiDialogProps = {
   periode: Periode[]
@@ -35,7 +35,10 @@ export function TambahPosisiDialog({ periode, perusahaan, idPeriodeAwal, onClose
       cancelLabel="Batal"
       loading={isSaving}
       onCancel={onClose}
-      onSubmit={(formData) => fetcher.submit(formData, { method: 'post' })}
+      onSubmit={(formData) => {
+        formData.set('intent', INTENT.tambah)
+        fetcher.submit(formData, { method: 'post' })
+      }}
     >
       <FormField label="Nama Posisi" htmlFor="posisi">
         <TextInput

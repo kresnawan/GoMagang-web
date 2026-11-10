@@ -22,12 +22,9 @@
 }
 
 @layer base {
-  /* Body text: mobile & tablet 16px, desktop 18px. Semua ukuran rem ikut terskala. */
+  /* Body text 16px di semua ukuran layar. Semua ukuran rem (heading, spacing) mengikuti basis ini. */
   html {
     font-size: 16px;
-    @variant lg {
-      font-size: 18px;
-    }
   }
 
   body {

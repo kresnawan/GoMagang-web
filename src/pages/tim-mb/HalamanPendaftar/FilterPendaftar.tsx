@@ -125,7 +125,7 @@ export function FilterPendaftar({ periode, perusahaan, posisi }: FilterPendaftar
               <optgroup key={grup.periode.id} label={labelPeriode(grup.periode)}>
                 {grup.posisi.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {item.posisi} ({item.perusahaan})
+                    {item.posisi} ({item.perusahaan}){item.disembunyikanPada ? ' (disembunyikan)' : ''}
                   </option>
                 ))}
               </optgroup>

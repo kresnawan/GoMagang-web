@@ -1,5 +1,6 @@
 import { useSearchParams } from 'react-router'
 import { Button, buttonClass } from '../../component'
+import logoIkon from '../../assets/gomagang-logo-icon_only.svg'
 import { ALLOWED_EMAIL_DOMAIN, GOOGLE_LOGIN_URL, loginErrorMessage } from '../../services/auth'
 
 /** Logo "G" Google; ditaruh di kotak putih agar warnanya tetap sesuai pedoman merek Google */
@@ -23,7 +24,7 @@ export function HalamanLogin() {
   return (
     <main className="flex min-h-svh items-center justify-center bg-brand-100 px-4 py-10">
       <div className="w-full max-w-sm rounded-sm border border-brand-300 bg-white px-5 py-8 text-center sm:px-8">
-        <p className="mb-6 text-h6 font-bold text-brand-700">GoMagang</p>
+        <img src={logoIkon} alt="GoMagang" className="mx-auto mb-6 h-16 w-auto" />
         <h1 className="mb-8 text-h5 text-brand-900">Login</h1>
 
         {error && (

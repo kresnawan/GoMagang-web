@@ -26,12 +26,13 @@ export const REFERENSI_ROUTE_ID = 'tim-mb-pendaftar'
 /**
  * Loader route induk: data referensi untuk dropdown filter & dialog Detail (periode, perusahaan, posisi).
  * Dipisah dari loader daftar supaya tidak ikut dimuat ulang setiap pencarian/filter/halaman berubah.
- * GET /api/v1/posisi hanya mengirim satu periode, jadi posisi diambil per periode secara paralel
+ * GET /api/v1/posisi hanya mengirim satu periode, jadi posisi diambil per periode secara paralel. Posisi yang
+ * disembunyikan ikut diambil, supaya pendaftaran lama di posisi itu tetap bisa disaring
  */
 export async function referensiLoader({ request }: LoaderFunctionArgs) {
   const [periode, perusahaan] = await Promise.all([getPeriode(request.signal), getPerusahaan(request.signal)])
   const posisiPerPeriode = await Promise.all(
-    periode.map((item) => getPosisiList({ idPeriode: item.id }, request.signal)),
+    periode.map((item) => getPosisiList({ idPeriode: item.id, termasukDisembunyikan: true }, request.signal)),
   )
   return { periode, perusahaan, posisi: posisiPerPeriode.flat() }
 }

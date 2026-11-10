@@ -1,27 +1,92 @@
 import { useCallback, useState } from 'react'
 import { useLoaderData, useNavigation, useSearchParams } from 'react-router'
-import { DropDown, FormField } from '../../../component'
+import { Button, DropDown, FormField } from '../../../component'
 import { cn } from '../../../component/cn'
 import type { Posisi } from '../../../services/lowongan'
+import { formatWaktu } from '../../HalamanDetailPendaftaran/format'
 import { GagalMemuat, PageHeading, TambahButton } from '../components'
 import { labelPeriode } from '../periode'
-import { PERIODE_PARAM, type loader } from './route'
+import { INTENT, PERIODE_PARAM, type loader } from './route'
 import { TambahPosisiDialog } from './TambahPosisiDialog'
+import { SembunyikanPosisiDialog, UbahPosisiDialog } from './UbahPosisiDialog'
 
-function PosisiCard({ posisi }: { posisi: Posisi }) {
+type Operasi = { intent: typeof INTENT.ubah | typeof INTENT.sembunyikan; posisi: Posisi }
+
+/** Kartu posisi. Tanpa `onPilih` (posisi yang disembunyikan) kartu tampil redup tanpa tombol aksi */
+function PosisiCard({ posisi, onPilih }: { posisi: Posisi; onPilih?: (operasi: Operasi) => void }) {
+  const disembunyikan = posisi.disembunyikanPada !== null
+
   return (
-    <li className="rounded-sm border border-brand-300 p-4 sm:px-5">
-      <h3 className="text-h6 leading-snug text-brand-900">{posisi.posisi}</h3>
-      <p className="mt-1 text-brand-700">{posisi.perusahaan}</p>
-      <p className="text-sm text-brand-500">
-        Kuota: <span className="font-bold text-brand-700">{posisi.kuota}</span> orang
-      </p>
+    <li className={cn('flex flex-wrap items-start justify-between gap-3 rounded-sm border border-brand-300 p-4 sm:px-5', disembunyikan && 'bg-brand-50')}>
+      <div className={cn(disembunyikan && 'text-brand-500')}>
+        <h3 className={cn('text-h6 leading-snug', disembunyikan ? 'text-brand-500' : 'text-brand-900')}>{posisi.posisi}</h3>
+        <p className={cn('mt-1', !disembunyikan && 'text-brand-700')}>{posisi.perusahaan}</p>
+        <p className="text-sm text-brand-500">
+          Kuota: <span className="font-bold">{posisi.kuota}</span> orang
+        </p>
+        {posisi.disembunyikanPada && (
+          <p className="mt-1 text-sm">Disembunyikan pada {formatWaktu(posisi.disembunyikanPada)} WIB</p>
+        )}
+      </div>
+      {onPilih && (
+        <div className="flex gap-2">
+          <Button type="button" variant="outlined" className="px-3 py-1.5 text-sm" onClick={() => onPilih({ intent: INTENT.ubah, posisi })}>
+            Ubah
+          </Button>
+          <Button
+            type="button"
+            variant="outlined"
+            className="border-red-700 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50"
+            onClick={() => onPilih({ intent: INTENT.sembunyikan, posisi })}
+          >
+            Hapus
+          </Button>
+        </div>
+      )}
     </li>
   )
 }
 
+/** Posisi yang disembunyikan di periode ini, hanya tampil setelah teks pembukanya diklik */
+function BagianDisembunyikan({ posisi }: { posisi: Posisi[] }) {
+  const [terbuka, setTerbuka] = useState(false)
+
+  return (
+    <section aria-label="Posisi yang disembunyikan" className="mt-6">
+      <button
+        type="button"
+        aria-expanded={terbuka}
+        aria-controls="posisi-disembunyikan"
+        onClick={() => setTerbuka((nilai) => !nilai)}
+        className="cursor-pointer text-sm font-bold text-brand-500 underline hover:text-brand-700"
+      >
+        {terbuka ? 'Sembunyikan daftar ini' : `Tampilkan posisi yang disembunyikan (${posisi.length})`}
+      </button>
+
+      {terbuka && (
+        <div id="posisi-disembunyikan" className="mt-3">
+          <ul className="flex flex-col gap-4">
+            {posisi.map((item) => (
+              <PosisiCard key={item.id} posisi={item} />
+            ))}
+          </ul>
+          {posisi.length === 0 && (
+            <p className="rounded-sm border border-dashed border-brand-300 px-4 py-6 text-center text-brand-500">
+              Tidak ada posisi yang disembunyikan di periode ini.
+            </p>
+          )}
+        </div>
+      )}
+    </section>
+  )
+}
+
 export function HalamanKatalog() {
-  const { periode, perusahaan, terpilih, posisi } = useLoaderData<typeof loader>()
+  const { periode, perusahaan, terpilih, posisi: semua } = useLoaderData<typeof loader>()
+  const posisi = semua.filter((item) => item.disembunyikanPada === null)
+  const disembunyikan = semua.filter((item) => item.disembunyikanPada !== null)
+  const [operasi, setOperasi] = useState<Operasi | null>(null)
+  const closeOperasi = useCallback(() => setOperasi(null), [])
   const [, setSearchParams] = useSearchParams()
   const navigation = useNavigation()
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -69,7 +134,7 @@ export function HalamanKatalog() {
 
         <ul className={cn('mt-6 flex flex-col gap-4 transition-opacity', isLoading && 'opacity-50')}>
           {posisi.map((item) => (
-            <PosisiCard key={item.id} posisi={item} />
+            <PosisiCard key={item.id} posisi={item} onPilih={setOperasi} />
           ))}
         </ul>
         {posisi.length === 0 && (
@@ -77,6 +142,7 @@ export function HalamanKatalog() {
             Belum ada posisi magang di periode ini.
           </p>
         )}
+        {terpilih && <BagianDisembunyikan key={terpilih.id} posisi={disembunyikan} />}
       </section>
 
       {dialogOpen && (
@@ -87,6 +153,10 @@ export function HalamanKatalog() {
           onClose={closeDialog}
           onSuccess={handleSuccess}
         />
+      )}
+      {operasi?.intent === INTENT.ubah && <UbahPosisiDialog key={operasi.posisi.id} posisi={operasi.posisi} onClose={closeOperasi} />}
+      {operasi?.intent === INTENT.sembunyikan && (
+        <SembunyikanPosisiDialog key={operasi.posisi.id} posisi={operasi.posisi} onClose={closeOperasi} />
       )}
     </>
   )

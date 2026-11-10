@@ -16,8 +16,9 @@ export type SidebarProps = {
 export function Sidebar({ items, homePath, onNavigate, className }: SidebarProps) {
   return (
     <nav aria-label="Menu utama" className={cn('flex h-full flex-col bg-white', className)}>
-      <div className="flex h-20 items-center px-5">
-        <Logo to={homePath} />
+      {/* Desktop: logo selebar sidebar (maks. 176px); drawer mobile tetap 40px */}
+      <div className="flex h-20 items-center px-5 lg:h-28">
+        <Logo to={homePath} className="lg:w-full" imgClassName="lg:h-auto lg:w-full lg:max-w-44" />
       </div>
       <ul className="">
         {items.map((item) => (

@@ -40,6 +40,9 @@ export function TabelMk({ penyetaraan }: { penyetaraan: PenyetaraanMk[] }) {
                 <td className={td}>
                   {item.mataKuliah.mkKonversi}
                   <span className="block text-sm text-brand-500 sm:hidden">Asal: {item.mataKuliah.mkAsal}</span>
+                  {item.mataKuliah.dihapusPada && (
+                    <span className="block text-sm text-brand-500">Sudah tidak tersedia di katalog</span>
+                  )}
                 </td>
                 <td className={`${td} text-center`}>{item.mataKuliah.sks}</td>
                 <td className={`${td} text-right`}>

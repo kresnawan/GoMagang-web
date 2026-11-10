@@ -1,4 +1,5 @@
-// Posisi magang: GET/POST /api/v1/posisi, dipakai halaman Pendaftaran (daftar & form) dan Katalog Tim MB.
+// Posisi magang: GET/POST /api/v1/posisi dan PATCH/DELETE /api/v1/posisi/{id}, dipakai halaman Pendaftaran
+// (daftar & form) dan Katalog Tim MB. DELETE adalah soft delete: posisi disembunyikan, barisnya tetap ada.
 
 import { api } from './http'
 
@@ -18,6 +19,8 @@ export type Posisi = {
   kuota: number
   /** Placeholder inisial perusahaan (backend belum menyimpan gambar) */
   gambar: string
+  /** ISO 8601 waktu disembunyikan; null bila masih aktif */
+  disembunyikanPada: string | null
 }
 
 export type PosisiFilter = {
@@ -25,6 +28,8 @@ export type PosisiFilter = {
   q?: string
   /** Kosong = periode default dari backend (yang sedang berjalan) */
   idPeriode?: number
+  /** Ikut ambil posisi yang disembunyikan, di bawah yang aktif. Hanya untuk Tim MB */
+  termasukDisembunyikan?: boolean
 }
 
 /** Bentuk response GET /api/v1/posisi */
@@ -35,6 +40,7 @@ type PosisiResponse = {
   kuota: number
   id_periode: number
   perusahaan: { id_perusahaan: number; nama_perusahaan: string }
+  deleted_at: string | null
 }
 
 const WARNA_GAMBAR = ['#202F66', '#4E5E99', '#2B3B78', '#060F33', '#919ECC']
@@ -64,6 +70,7 @@ function toPosisi(res: PosisiResponse): Posisi {
     deskripsiPersyaratan: res.deskripsi_persyaratan,
     kuota: res.kuota,
     gambar: gambarInisial(res.perusahaan.nama_perusahaan, res.perusahaan.id_perusahaan),
+    disembunyikanPada: res.deleted_at,
   }
 }
 
@@ -73,7 +80,11 @@ function toPosisi(res: PosisiResponse): Posisi {
  */
 export async function getPosisiList(filter: PosisiFilter = {}, signal?: AbortSignal): Promise<Posisi[]> {
   const { data } = await api.get<PosisiResponse[]>('/api/v1/posisi', {
-    params: { s: filter.q || undefined, id_periode: filter.idPeriode },
+    params: {
+      s: filter.q || undefined,
+      id_periode: filter.idPeriode,
+      termasuk_dihapus: filter.termasukDisembunyikan || undefined,
+    },
     signal,
   })
   return data.map(toPosisi)
@@ -115,6 +126,31 @@ export async function tambahPosisi(input: PosisiInput, signal?: AbortSignal): Pr
     },
     { signal },
   )
+  return toPosisi(data)
+}
+
+/** Body PATCH /api/v1/posisi/{id}. Perusahaan & periode tidak bisa diubah */
+export type UbahPosisiInput = Pick<PosisiInput, 'posisi' | 'deskripsiPersyaratan' | 'kuota'>
+
+/**
+ * PATCH /api/v1/posisi/{id} (Tim MB). Error 404 bila posisi atau perusahaannya sudah disembunyikan;
+ * 422 membawa `message` (lihat pesanError)
+ */
+export async function ubahPosisi(id: number, input: UbahPosisiInput, signal?: AbortSignal): Promise<Posisi> {
+  const { data } = await api.patch<PosisiResponse>(
+    `/api/v1/posisi/${id}`,
+    { posisi: input.posisi, deskripsi_persyaratan: input.deskripsiPersyaratan, kuota: input.kuota },
+    { signal },
+  )
+  return toPosisi(data)
+}
+
+/**
+ * DELETE /api/v1/posisi/{id} (Tim MB), soft delete: posisi hilang dari daftar lowongan mahasiswa dan tidak
+ * bisa didaftar lagi. Pendaftaran yang sudah ada tetap. Error 404 bila sudah disembunyikan
+ */
+export async function sembunyikanPosisi(id: number, signal?: AbortSignal): Promise<Posisi> {
+  const { data } = await api.delete<PosisiResponse>(`/api/v1/posisi/${id}`, { signal })
   return toPosisi(data)
 }
 

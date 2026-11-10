@@ -1,7 +1,6 @@
 import { useLocation, useNavigate } from 'react-router'
 import { Button } from '../../../component'
 import type { Posisi } from '../../../services/lowongan'
-import { LowonganImage } from '../LowonganInfo'
 import type { PendaftaranNavState } from '../navigation'
 
 type LowonganItemProps = {
@@ -16,8 +15,6 @@ export function LowonganItem({ posisi, alasanNonaktif }: LowonganItemProps) {
 
   return (
     <li className="flex flex-col gap-4 border-b border-brand-300 py-5 sm:flex-row sm:items-center sm:gap-6">
-      <LowonganImage lowongan={posisi} className="sm:w-44 lg:w-52" />
-
       <div className="min-w-0 flex-1">
         <h2 className="text-h6 text-brand-700">{posisi.posisi}</h2>
         <p className="text-brand-900">{posisi.perusahaan}</p>

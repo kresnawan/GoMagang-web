@@ -9,6 +9,7 @@ import { konversiMkRoute } from './pages/HalamanKonversiMK'
 import { loginRoute } from './pages/HalamanLogin'
 import { daftarLowonganRoute, formPendaftaranRoute, wajibDataDiriLengkap } from './pages/HalamanPendaftaran'
 import { katalogRoute } from './pages/tim-mb/HalamanKatalog'
+import { konversiMkTimMbRoute } from './pages/tim-mb/HalamanKonversiMK'
 import { pendaftarLayoutRoute, pendaftarRoute } from './pages/tim-mb/HalamanPendaftar'
 import { detailPendaftarRoute } from './pages/tim-mb/HalamanPendaftar/detail'
 import { periodeRoute } from './pages/tim-mb/HalamanPeriode'
@@ -57,6 +58,7 @@ export const router = createBrowserRouter([
       { path: 'katalog', ...katalogRoute },
       { path: 'perusahaan', ...perusahaanRoute },
       { path: 'periode', ...periodeRoute },
+      { path: 'konversi-mk', ...konversiMkTimMbRoute },
       {
         path: 'pendaftar',
         ...pendaftarLayoutRoute,

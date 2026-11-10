@@ -103,7 +103,6 @@ export function DaftarLowonganSkeleton() {
         <div className="h-10 rounded-sm bg-brand-100" />
         {[1, 2, 3].map((i) => (
           <div key={i} className="mt-6 flex flex-col gap-4 sm:flex-row">
-            <div className="aspect-3/1 rounded-md bg-brand-100 sm:w-52" />
             <div className="flex-1 space-y-2">
               <div className="h-6 w-2/3 rounded bg-brand-100" />
               <div className="h-4 w-1/3 rounded bg-brand-100" />
