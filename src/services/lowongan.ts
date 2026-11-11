@@ -1,5 +1,5 @@
 // Posisi magang: GET/POST /api/v1/posisi dan PATCH/DELETE /api/v1/posisi/{id}, dipakai halaman Pendaftaran
-// (daftar & form) dan Katalog Tim MB. DELETE adalah soft delete: posisi disembunyikan, barisnya tetap ada.
+// (daftar & form) dan Katalog Panitia Magang. DELETE adalah soft delete: posisi disembunyikan, barisnya tetap ada.
 
 import { api } from './http'
 
@@ -28,7 +28,7 @@ export type PosisiFilter = {
   q?: string
   /** Kosong = periode default dari backend (yang sedang berjalan) */
   idPeriode?: number
-  /** Ikut ambil posisi yang disembunyikan, di bawah yang aktif. Hanya untuk Tim MB */
+  /** Ikut ambil posisi yang disembunyikan, di bawah yang aktif. Hanya untuk Panitia Magang */
   termasukDisembunyikan?: boolean
 }
 
@@ -76,7 +76,7 @@ function toPosisi(res: PosisiResponse): Posisi {
 
 /**
  * GET /api/v1/posisi. Tanpa idPeriode: mahasiswa mendapat periode berjalan ([] jika belum ada yang dibuka),
- * Tim MB mendapat periode berjalan atau yang mulai paling akhir
+ * Panitia Magang mendapat periode berjalan atau yang mulai paling akhir
  */
 export async function getPosisiList(filter: PosisiFilter = {}, signal?: AbortSignal): Promise<Posisi[]> {
   const { data } = await api.get<PosisiResponse[]>('/api/v1/posisi', {
@@ -113,7 +113,7 @@ export type PosisiInput = {
   kuota: number
 }
 
-/** POST /api/v1/posisi (Tim MB). Error 422 membawa `message` yang bisa langsung ditampilkan (lihat pesanError) */
+/** POST /api/v1/posisi (Panitia Magang). Error 422 membawa `message` yang bisa langsung ditampilkan (lihat pesanError) */
 export async function tambahPosisi(input: PosisiInput, signal?: AbortSignal): Promise<Posisi> {
   const { data } = await api.post<PosisiResponse>(
     '/api/v1/posisi',
@@ -133,7 +133,7 @@ export async function tambahPosisi(input: PosisiInput, signal?: AbortSignal): Pr
 export type UbahPosisiInput = Pick<PosisiInput, 'posisi' | 'deskripsiPersyaratan' | 'kuota'>
 
 /**
- * PATCH /api/v1/posisi/{id} (Tim MB). Error 404 bila posisi atau perusahaannya sudah disembunyikan;
+ * PATCH /api/v1/posisi/{id} (Panitia Magang). Error 404 bila posisi atau perusahaannya sudah disembunyikan;
  * 422 membawa `message` (lihat pesanError)
  */
 export async function ubahPosisi(id: number, input: UbahPosisiInput, signal?: AbortSignal): Promise<Posisi> {
@@ -146,7 +146,7 @@ export async function ubahPosisi(id: number, input: UbahPosisiInput, signal?: Ab
 }
 
 /**
- * DELETE /api/v1/posisi/{id} (Tim MB), soft delete: posisi hilang dari daftar lowongan mahasiswa dan tidak
+ * DELETE /api/v1/posisi/{id} (Panitia Magang), soft delete: posisi hilang dari daftar lowongan mahasiswa dan tidak
  * bisa didaftar lagi. Pendaftaran yang sudah ada tetap. Error 404 bila sudah disembunyikan
  */
 export async function sembunyikanPosisi(id: number, signal?: AbortSignal): Promise<Posisi> {

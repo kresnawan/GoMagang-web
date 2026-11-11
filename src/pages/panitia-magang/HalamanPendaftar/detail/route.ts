@@ -5,7 +5,7 @@ import { pesanError } from '../../../../services/http'
 import { STATUS_PENDAFTARAN, type StatusPendaftaran } from '../../../../services/pendaftaran'
 import { getPendaftarDetail, ubahStatusPendaftar } from '../../../../services/pendaftar'
 
-export const detailPendaftarPath = (id: number) => `/tim-mb/pendaftar/${id}`
+export const detailPendaftarPath = (id: number) => `/panitia-magang/pendaftar/${id}`
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   const detail = await getPendaftarDetail(Number(params.idPendaftar), request.signal)

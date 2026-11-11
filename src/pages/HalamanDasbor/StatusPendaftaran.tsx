@@ -1,18 +1,65 @@
 import { cn } from '../../component/cn'
-import type { StatusPendaftaran as Status } from '../../services/pendaftaran'
+import type { StatusPendaftaran } from '../../services/pendaftaran'
 import { statusToneClass } from './statusTone'
 
-/** Baris status di bagian bawah kartu pendaftaran */
-export function StatusPendaftaran({ status, className }: { status: Status; className?: string }) {
-  const tone = statusToneClass(status)
+/** Status pendaftaran sebagai badge kecil */
+export function StatusBadge({ status, className }: { status: StatusPendaftaran; className?: string }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-sm font-bold whitespace-nowrap ring-1 ring-inset',
+        statusToneClass(status).badge,
+        className,
+      )}
+    >
+      <span className="sr-only">Status: </span>
+      {status}
+    </span>
+  )
+}
+
+/** Tahap-tahap pendaftaran yang berjalan normal, berurutan */
+const TAHAP: { status: StatusPendaftaran; label: string }[] = [
+  { status: 'Menunggu Verifikasi', label: 'Verifikasi' },
+  { status: 'Lolos Seleksi Administrasi', label: 'Administrasi' },
+  { status: 'Diterima', label: 'Diterima' },
+  { status: 'Aktif', label: 'Aktif' },
+  { status: 'Selesai', label: 'Selesai' },
+]
+
+/**
+ * Progress tahap pendaftaran. Hanya untuk status yang ada di alur normal; Tidak Lolos/Batal tidak punya posisi
+ * di alur ini (tahap terakhirnya tidak diketahui dari daftar pendaftaran), jadi tidak ditampilkan
+ */
+export function TahapPendaftaran({ status }: { status: StatusPendaftaran }) {
+  const sekarang = TAHAP.findIndex((tahap) => tahap.status === status)
+  if (sekarang === -1) return null
 
   return (
-    <div className={cn('flex items-center gap-3 px-4 py-3 text-brand-900', className)}>
-      <span className={cn('size-3.5 shrink-0 rounded-full', tone.dot)} aria-hidden />
-      <span>
-        <span className="sr-only">Status: </span>
-        {status}
-      </span>
+    <div>
+      <p className="sr-only">
+        Tahap {sekarang + 1} dari {TAHAP.length}
+      </p>
+      <ol className="grid grid-cols-5 gap-1" aria-hidden>
+        {TAHAP.map((tahap, index) => (
+          <li key={tahap.status} className="min-w-0">
+            <span
+              className={cn(
+                'block h-1.5 rounded-full',
+                index < sekarang ? 'bg-brand-500' : index === sekarang ? 'bg-brand-700' : 'bg-brand-100',
+              )}
+            />
+            <span
+              className={cn(
+                'mt-1.5 block truncate text-xs',
+                index === sekarang ? 'font-bold text-brand-700' : index < sekarang ? 'text-brand-500' : 'text-brand-300',
+              )}
+            >
+              {tahap.label}
+            </span>
+          </li>
+        ))}
+      </ol>
     </div>
   )
 }

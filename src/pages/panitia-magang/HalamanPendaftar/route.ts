@@ -16,12 +16,12 @@ import { getPerusahaan } from '../../../services/perusahaan'
 import { parsePendaftarParams } from './params'
 
 /** Alamat action halaman ini (route index), untuk fetcher.submit dari dialog Detail */
-export const PENDAFTAR_ACTION = '/tim-mb/pendaftar?index'
+export const PENDAFTAR_ACTION = '/panitia-magang/pendaftar?index'
 
 export const INTENT = { jadwal: 'jadwal', plotting: 'plotting' } as const
 
 /** id route induk `pendaftar` (dipakai useRouteLoaderData) */
-export const REFERENSI_ROUTE_ID = 'tim-mb-pendaftar'
+export const REFERENSI_ROUTE_ID = 'panitia-magang-pendaftar'
 
 /**
  * Loader route induk: data referensi untuk dropdown filter & dialog Detail (periode, perusahaan, posisi).

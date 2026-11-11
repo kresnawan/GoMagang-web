@@ -29,7 +29,7 @@ const toPerusahaan = (res: PerusahaanResponse): Perusahaan => ({
 })
 
 /**
- * Perusahaan mitra yang aktif, urut nama. Dengan `termasukDisembunyikan` (hanya Tim MB) yang
+ * Perusahaan mitra yang aktif, urut nama. Dengan `termasukDisembunyikan` (hanya Panitia Magang) yang
  * disembunyikan ikut dikirim, di bawah yang aktif
  */
 export async function getPerusahaan(signal?: AbortSignal, termasukDisembunyikan = false): Promise<Perusahaan[]> {

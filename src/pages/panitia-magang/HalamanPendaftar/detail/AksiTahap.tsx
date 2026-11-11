@@ -1,6 +1,6 @@
 // Tombol data tahap di dialog Detail Pendaftar: jadwal seleksi substansi (Lolos Seleksi Administrasi) dan
 // plotting DPM (Aktif). Dialog form-nya dipakai bersama dengan aksi massal di halaman Pendaftar.
-// Surat keterangan tidak diunggah Tim MB (rencananya dibuat otomatis dari template).
+// Surat keterangan tidak diunggah Panitia Magang (rencananya dibuat otomatis dari template).
 
 import { useState, type ReactNode } from 'react'
 import { Button } from '../../../../component'

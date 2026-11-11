@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from 'react-router'
 import { getPosisiList, type PosisiFilter } from '../../../services/lowongan'
-import { getPendaftaranBerjalan } from '../../../services/pendaftaran'
+import { getRiwayatPendaftaran } from '../../../services/pendaftaran'
 import { getPeriode } from '../../../services/periode'
 
 export function parsePosisiFilter(params: URLSearchParams): PosisiFilter {
@@ -12,13 +12,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // Paralel: tanpa id_periode backend memakai periode berjalan (yang mulai paling akhir), sama dengan
   // periode[0] di sini. Posisi saja tidak cukup karena [] bisa berarti "belum dibuka" atau "belum ada lowongan".
-  const [periode, posisi, berjalan] = await Promise.all([
+  const [periode, posisi, riwayat] = await Promise.all([
     getPeriode(request.signal, 'berlangsung'),
     getPosisiList(filter, request.signal),
-    getPendaftaranBerjalan(request.signal),
+    getRiwayatPendaftaran(request.signal),
   ])
 
   /** null: tidak ada periode pendaftaran yang sedang berlangsung */
   const periodeBerjalan = periode[0] ?? null
-  return { filter, periodeBerjalan, posisi: periodeBerjalan ? posisi : [], berjalan }
+  return { filter, periodeBerjalan, posisi: periodeBerjalan ? posisi : [], riwayat }
 }

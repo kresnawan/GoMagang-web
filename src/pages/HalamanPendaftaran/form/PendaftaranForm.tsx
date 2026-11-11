@@ -3,15 +3,18 @@ import { useFetcher, useLocation, useNavigate } from 'react-router'
 import { Button, ConfirmDialog, FileInput, FormField } from '../../../component'
 import { MAX_FILE_SIZE, type Posisi } from '../../../services/lowongan'
 import { MAX_BERKAS_TAMBAHAN } from '../../../services/pendaftaran'
+import { isTautanValid, type TemplatSpDpa } from '../../../services/templatSpDpa'
 import { DAFTAR_LOWONGAN_PATH, type PendaftaranNavState } from '../navigation'
 import { BERKAS, BERKAS_TAMBAHAN, getBerkasTambahan, validatePendaftaranForm } from './form'
 import type { action } from './route'
 
 export type PendaftaranFormProps = {
   lowongan: Posisi
+  /** Templat surat pernyataan DPA; null bila belum diatur Panitia Magang atau gagal dimuat */
+  templatSpDpa: TemplatSpDpa | null
 }
 
-export function PendaftaranForm({ lowongan }: PendaftaranFormProps) {
+export function PendaftaranForm({ lowongan, templatSpDpa }: PendaftaranFormProps) {
   const fetcher = useFetcher<typeof action>()
   const navigate = useNavigate()
   const location = useLocation()
@@ -57,6 +60,20 @@ export function PendaftaranForm({ lowongan }: PendaftaranFormProps) {
               hint={`(.pdf, maks. ${MAX_FILE_SIZE / 1024 / 1024} MB)`}
               required
             />
+            {berkas.name === 'suratDpa' && templatSpDpa && isTautanValid(templatSpDpa.tautan) && (
+              <p className="mt-1.5 text-sm text-brand-700">
+                Belum punya surat pernyataan?{' '}
+                <a
+                  href={templatSpDpa.tautan}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-brand-500 underline hover:text-brand-700"
+                >
+                  Unduh templat
+                  <span className="sr-only"> (membuka tab baru)</span>
+                </a>
+              </p>
+            )}
           </FormField>
         ))}
 

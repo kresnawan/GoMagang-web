@@ -1,16 +1,19 @@
 import { data, type ActionFunctionArgs, type LoaderFunctionArgs } from 'react-router'
 import { pesanError } from '../../../services/http'
 import { getPosisi } from '../../../services/lowongan'
-import { alasanTidakBisaDaftar, getPendaftaranBerjalan, kirimPendaftaran } from '../../../services/pendaftaran'
+import { alasanTidakBisaDaftar, getRiwayatPendaftaran, kirimPendaftaran } from '../../../services/pendaftaran'
+import { getTemplatSpDpa } from '../../../services/templatSpDpa'
 import { getBerkasTambahan, validatePendaftaranForm } from './form'
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
-  const [posisi, berjalan] = await Promise.all([
+  const [posisi, riwayat, templatSpDpa] = await Promise.all([
     getPosisi(Number(params.lowonganId), request.signal),
-    getPendaftaranBerjalan(request.signal),
+    getRiwayatPendaftaran(request.signal),
+    // Hanya pelengkap: bila gagal dimuat, form tetap bisa dipakai tanpa link templat
+    getTemplatSpDpa(request.signal).catch(() => null),
   ])
   if (!posisi) throw data('Lowongan tidak ditemukan', { status: 404 })
-  return { lowongan: posisi, alasanTidakBisaDaftar: alasanTidakBisaDaftar(berjalan, posisi.id) }
+  return { lowongan: posisi, alasanTidakBisaDaftar: alasanTidakBisaDaftar(riwayat, posisi), templatSpDpa }
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {

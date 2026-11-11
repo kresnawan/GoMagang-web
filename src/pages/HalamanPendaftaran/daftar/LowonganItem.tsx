@@ -5,7 +5,7 @@ import type { PendaftaranNavState } from '../navigation'
 
 type LowonganItemProps = {
   posisi: Posisi
-  /** Alasan tombol Daftar nonaktif (sudah didaftar, atau batas pendaftaran berjalan tercapai); null bila aktif */
+  /** Alasan tombol Daftar nonaktif (sudah didaftar, atau batas pendaftaran per periode tercapai); null bila aktif */
   alasanNonaktif: string | null
 }
 

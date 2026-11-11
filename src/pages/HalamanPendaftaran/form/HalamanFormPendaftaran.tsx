@@ -29,7 +29,7 @@ function TidakBisaDaftar({ alasan }: { alasan: string }) {
 }
 
 export function HalamanFormPendaftaran() {
-  const { lowongan, alasanTidakBisaDaftar } = useLoaderData<typeof loader>()
+  const { lowongan, alasanTidakBisaDaftar, templatSpDpa } = useLoaderData<typeof loader>()
 
   return (
     <>
@@ -45,7 +45,7 @@ export function HalamanFormPendaftaran() {
       {alasanTidakBisaDaftar ? (
         <TidakBisaDaftar alasan={alasanTidakBisaDaftar} />
       ) : (
-        <PendaftaranForm lowongan={lowongan} />
+        <PendaftaranForm lowongan={lowongan} templatSpDpa={templatSpDpa} />
       )}
     </>
   )

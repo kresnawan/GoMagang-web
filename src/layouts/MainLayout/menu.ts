@@ -9,12 +9,14 @@ export const MENU_ITEMS: MenuItem[] = [
   { label: 'Data Diri', to: '/data-diri' },
   { label: 'Pendaftaran', to: '/pendaftaran' },
   { label: 'Konversi MK', to: '/konversi-mk' },
+  { label: 'Templat SP DPA', to: '/templat-sp-dpa' },
 ]
 
-export const TIM_MB_MENU_ITEMS: MenuItem[] = [
-  { label: 'Pendaftar', to: '/tim-mb/pendaftar' },
-  { label: 'Katalog Posisi', to: '/tim-mb/katalog' },
-  { label: 'Perusahaan Mitra', to: '/tim-mb/perusahaan' },
-  { label: 'Periode', to: '/tim-mb/periode' },
-  { label: 'Konversi MK', to: '/tim-mb/konversi-mk' },
+export const PANITIA_MAGANG_MENU_ITEMS: MenuItem[] = [
+  { label: 'Pendaftar', to: '/panitia-magang/pendaftar' },
+  { label: 'Katalog Posisi', to: '/panitia-magang/katalog' },
+  { label: 'Perusahaan Mitra', to: '/panitia-magang/perusahaan' },
+  { label: 'Periode', to: '/panitia-magang/periode' },
+  { label: 'Konversi MK', to: '/panitia-magang/konversi-mk' },
+  { label: 'Templat SP DPA', to: '/panitia-magang/templat-sp-dpa' },
 ]

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useLoaderData, useLocation, useNavigation, useRevalidator } from 'react-router'
 import { cn } from '../../../component/cn'
-import { alasanTidakBisaDaftar, MAX_PENDAFTARAN_BERJALAN } from '../../../services/pendaftaran'
+import { alasanTidakBisaDaftar, batasPeriodeTercapai, MAX_PENDAFTARAN_PER_PERIODE } from '../../../services/pendaftaran'
 import { DAFTAR_LOWONGAN_PATH, type PendaftaranNavState } from '../navigation'
 import { LowonganFilter } from './LowonganFilter'
 import { LowonganItem } from './LowonganItem'
@@ -53,7 +53,7 @@ function PeriodeBelumDibuka() {
 }
 
 export function HalamanDaftarLowongan() {
-  const { filter, periodeBerjalan, posisi, berjalan } = useLoaderData<typeof loader>()
+  const { filter, periodeBerjalan, posisi, riwayat } = useLoaderData<typeof loader>()
   const navigation = useNavigation()
   // Redupkan list selama filter baru sedang dimuat
   const isFiltering = navigation.state === 'loading' && navigation.location.pathname === DAFTAR_LOWONGAN_PATH
@@ -72,16 +72,16 @@ export function HalamanDaftarLowongan() {
       <PageHeading />
       <SuksesBanner />
       <LowonganFilter />
-      {berjalan.batasTercapai && (
+      {batasPeriodeTercapai(riwayat, periodeBerjalan.id) && (
         <p role="status" className="mt-4 rounded-sm border border-brand-300 bg-brand-50 px-4 py-3 text-sm text-brand-700">
-          Kamu sudah memiliki {MAX_PENDAFTARAN_BERJALAN} pendaftaran yang sedang berjalan. Kamu bisa mendaftar lagi
-          setelah salah satunya selesai.
+          Kamu sudah mendaftar {MAX_PENDAFTARAN_PER_PERIODE} kali di periode ini. Pendaftaran yang batal, tidak lolos,
+          atau selesai tetap dihitung, jadi kamu baru bisa mendaftar lagi di periode berikutnya.
         </p>
       )}
 
       <ul className={cn('mt-6 border-t border-brand-300 transition-opacity', isFiltering && 'opacity-50')}>
         {posisi.map((item) => (
-          <LowonganItem key={item.id} posisi={item} alasanNonaktif={alasanTidakBisaDaftar(berjalan, item.id)} />
+          <LowonganItem key={item.id} posisi={item} alasanNonaktif={alasanTidakBisaDaftar(riwayat, item)} />
         ))}
       </ul>
       {posisi.length === 0 && (

@@ -17,19 +17,32 @@ function PosisiCard({ posisi, onPilih }: { posisi: Posisi; onPilih?: (operasi: O
   const disembunyikan = posisi.disembunyikanPada !== null
 
   return (
-    <li className={cn('flex flex-wrap items-start justify-between gap-3 rounded-sm border border-brand-300 p-4 sm:px-5', disembunyikan && 'bg-brand-50')}>
-      <div className={cn(disembunyikan && 'text-brand-500')}>
+    <li
+      className={cn(
+        'flex flex-col gap-4 rounded-sm border border-brand-300 p-4 sm:flex-row sm:items-center sm:px-5',
+        disembunyikan && 'bg-brand-50',
+      )}
+    >
+      <div className={cn('min-w-0 flex-1', disembunyikan && 'text-brand-500')}>
         <h3 className={cn('text-h6 leading-snug', disembunyikan ? 'text-brand-500' : 'text-brand-900')}>{posisi.posisi}</h3>
         <p className={cn('mt-1', !disembunyikan && 'text-brand-700')}>{posisi.perusahaan}</p>
-        <p className="text-sm text-brand-500">
-          Kuota: <span className="font-bold">{posisi.kuota}</span> orang
-        </p>
+        {posisi.deskripsiPersyaratan && (
+          <p className="mt-2 line-clamp-3 text-sm whitespace-pre-line text-brand-500" title={posisi.deskripsiPersyaratan}>
+            {posisi.deskripsiPersyaratan}
+          </p>
+        )}
         {posisi.disembunyikanPada && (
           <p className="mt-1 text-sm">Disembunyikan pada {formatWaktu(posisi.disembunyikanPada)} WIB</p>
         )}
       </div>
+      {/* Kuota di tengah, di antara teks dan tombol aksi */}
+      <p className="shrink-0 text-sm text-brand-500 sm:w-28 sm:text-center">
+        <span className="sm:block">Kuota</span>{' '}
+        <span className={cn('font-bold sm:block sm:text-h6', disembunyikan ? 'text-brand-500' : 'text-brand-900')}>{posisi.kuota}</span>{' '}
+        <span className="sm:block">orang</span>
+      </p>
       {onPilih && (
-        <div className="flex gap-2">
+        <div className="flex shrink-0 gap-2">
           <Button type="button" variant="outlined" className="px-3 py-1.5 text-sm" onClick={() => onPilih({ intent: INTENT.ubah, posisi })}>
             Ubah
           </Button>
@@ -110,27 +123,27 @@ export function HalamanKatalog() {
     <>
       <PageHeading title="Katalog Posisi Magang" subtitle="Kelola posisi magang yang dibuka di setiap periode." />
 
-      <section aria-label="Daftar posisi magang" className="rounded-sm border border-brand-300 p-4 sm:p-6">
-        <div className="mb-2 flex justify-end">
+      <section aria-label="Daftar posisi magang">
+        {/* Dropdown periode di kiri, tombol Tambah di kanan; sejajar di bagian bawah */}
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <FormField label="Periode" htmlFor="periode" className="w-full max-w-md sm:w-auto sm:flex-1">
+            <DropDown
+              id="periode"
+              value={terpilih?.id ?? ''}
+              disabled={periode.length === 0}
+              onChange={(event) => pilihPeriode(event.target.value)}
+            >
+              {periode.length === 0 && <option value="">Belum ada periode</option>}
+              {periode.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {labelPeriode(item)}
+                </option>
+              ))}
+            </DropDown>
+          </FormField>
           {/* Posisi wajib punya periode; tanpa periode tombol dinonaktifkan */}
           <TambahButton onClick={() => setDialogOpen(true)} disabled={periode.length === 0} />
         </div>
-
-        <FormField label="Periode" htmlFor="periode" className="max-w-md">
-          <DropDown
-            id="periode"
-            value={terpilih?.id ?? ''}
-            disabled={periode.length === 0}
-            onChange={(event) => pilihPeriode(event.target.value)}
-          >
-            {periode.length === 0 && <option value="">Belum ada periode</option>}
-            {periode.map((item) => (
-              <option key={item.id} value={item.id}>
-                {labelPeriode(item)}
-              </option>
-            ))}
-          </DropDown>
-        </FormField>
 
         <ul className={cn('mt-6 flex flex-col gap-4 transition-opacity', isLoading && 'opacity-50')}>
           {posisi.map((item) => (
@@ -166,9 +179,11 @@ export function KatalogSkeleton() {
   return (
     <>
       <PageHeading title="Katalog Posisi Magang" subtitle="Kelola posisi magang yang dibuka di setiap periode." />
-      <div className="animate-pulse rounded-sm border border-brand-300 p-4 sm:p-6" aria-busy aria-label="Memuat katalog">
-        <div className="mb-2 ml-auto h-11 w-32 rounded-sm bg-brand-100" />
-        <div className="h-16 max-w-md rounded-sm bg-brand-100" />
+      <div className="animate-pulse" aria-busy aria-label="Memuat katalog">
+        <div className="flex items-end justify-between gap-3">
+          <div className="h-16 max-w-md flex-1 rounded-sm bg-brand-100" />
+          <div className="h-11 w-32 rounded-sm bg-brand-100" />
+        </div>
         {[1, 2, 3].map((i) => (
           <div key={i} className="mt-4 h-24 rounded-sm bg-brand-100" />
         ))}

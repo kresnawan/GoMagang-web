@@ -17,7 +17,7 @@ export const LOGOUT_ENDPOINT = '/auth/logout'
 
 // ---- Sesi & peran ----
 
-export type Peran = 'mahasiswa' | 'tim_mb'
+export type Peran = 'mahasiswa' | 'panitia_magang'
 
 export type Sesi = {
   idPengguna: number
@@ -28,18 +28,18 @@ export type Sesi = {
 /** Halaman awal tiap peran (tujuan redirect setelah login / saat salah akses) */
 export const HOME_PATH: Record<Peran, string> = {
   mahasiswa: '/dasbor',
-  tim_mb: '/tim-mb/pendaftar',
+  panitia_magang: '/panitia-magang/pendaftar',
 }
 
 /**
  * Backend (/auth/me) belum mengirim peran, jadi peran diturunkan dari domain email:
- * akun @student.ub.ac.id = mahasiswa, selain itu = Tim MB (backend hanya memberi sesi ke akun
- * non-student yang terdaftar di tabel tim_mb). Jika backend nanti mengirim `peran`, itu yang dipakai.
+ * akun @student.ub.ac.id = mahasiswa, selain itu = Panitia Magang (backend hanya memberi sesi ke akun
+ * non-student yang terdaftar di tabel panitia_magang). Jika backend nanti mengirim `peran`, itu yang dipakai.
  */
 function toSesi(data: unknown): Sesi {
   const user = data as { id_pengguna: number; email: string; peran?: Peran }
   const peran =
-    user.peran ?? (user.email.toLowerCase().endsWith(`@${ALLOWED_EMAIL_DOMAIN}`) ? 'mahasiswa' : 'tim_mb')
+    user.peran ?? (user.email.toLowerCase().endsWith(`@${ALLOWED_EMAIL_DOMAIN}`) ? 'mahasiswa' : 'panitia_magang')
   return { idPengguna: user.id_pengguna, email: user.email, peran }
 }
 
@@ -101,7 +101,7 @@ const LOGIN_ERROR_MESSAGE: Record<string, string> = {
   domain: `Gunakan akun @${ALLOWED_EMAIL_DOMAIN} untuk masuk.`,
   cancelled: 'Login dibatalkan.',
   session: 'Sesi kamu telah berakhir. Silakan login kembali.',
-  not_registered: 'Akun ini belum terdaftar sebagai Tim Magang Berdampak.',
+  not_registered: 'Akun ini belum terdaftar sebagai Panitia Magang.',
 }
 
 export function loginErrorMessage(code: string | null) {

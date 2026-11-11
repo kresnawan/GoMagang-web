@@ -1,5 +1,5 @@
 // Konversi mata kuliah.
-// - Katalog (Tim MB kelola, semua bisa baca): GET & POST /api/v1/mata-kuliah, DELETE /api/v1/mata-kuliah/{id}.
+// - Katalog (Panitia Magang kelola, semua bisa baca): GET & POST /api/v1/mata-kuliah, DELETE /api/v1/mata-kuliah/{id}.
 //   DELETE adalah soft delete: MK hilang dari katalog & tidak bisa dipilih lagi, barisnya tetap ada (deleted_at terisi).
 // - Penyetaraan (mahasiswa memilih MK untuk pendaftaran Aktif miliknya):
 //   GET & POST /api/v1/pendaftaran/{id}/penyetaraan-mk, DELETE /api/v1/penyetaraan-mk/{id}.
@@ -66,7 +66,7 @@ const toPenyetaraan = (res: PenyetaraanResponse): PenyetaraanMk => ({
 })
 
 /**
- * MK yang aktif, urut nama MK konversi. Dengan `termasukDihapus` (hanya Tim MB) yang sudah dihapus ikut dikirim,
+ * MK yang aktif, urut nama MK konversi. Dengan `termasukDihapus` (hanya Panitia Magang) yang sudah dihapus ikut dikirim,
  * di bawah yang aktif
  */
 export async function getMataKuliahKonversi(signal?: AbortSignal, termasukDihapus = false): Promise<MataKuliahKonversi[]> {
@@ -77,7 +77,7 @@ export async function getMataKuliahKonversi(signal?: AbortSignal, termasukDihapu
 
 export type MataKuliahInput = Pick<MataKuliahKonversi, 'mkAsal' | 'mkKonversi' | 'sks'>
 
-/** Hanya Tim MB. Error 409 (pasangan MK asal & konversi sudah ada) & 422 membawa `message` (lihat pesanError) */
+/** Hanya Panitia Magang. Error 409 (pasangan MK asal & konversi sudah ada) & 422 membawa `message` (lihat pesanError) */
 export async function tambahMataKuliah(input: MataKuliahInput, signal?: AbortSignal): Promise<MataKuliahKonversi> {
   const body = { mk_asal: input.mkAsal, mk_konversi: input.mkKonversi, sks: input.sks }
   const { data } = await api.post<MataKuliahResponse>(ENDPOINT_MK, body, { signal })
@@ -85,7 +85,7 @@ export async function tambahMataKuliah(input: MataKuliahInput, signal?: AbortSig
 }
 
 /**
- * Hanya Tim MB. Soft delete: MK hilang dari katalog dan tidak bisa dipilih lagi, tapi penyetaraan yang sudah
+ * Hanya Panitia Magang. Soft delete: MK hilang dari katalog dan tidak bisa dipilih lagi, tapi penyetaraan yang sudah
  * memilihnya tetap ada. Error 404 bila tidak ada / sudah dihapus
  */
 export async function hapusMataKuliah(id: string, signal?: AbortSignal): Promise<MataKuliahKonversi> {

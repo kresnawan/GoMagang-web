@@ -1,4 +1,4 @@
-// Unduh berkas pendaftaran: GET /api/v1/berkas/{id_berkas} (pemilik berkas & Tim MB), dan
+// Unduh berkas pendaftaran: GET /api/v1/berkas/{id_berkas} (pemilik berkas & Panitia Magang), dan
 // GET /api/v1/berkas/publik/{token} (siapa pun yang memegang link dari file ekspor, tanpa login).
 
 import { isAxiosError, type AxiosResponse } from 'axios'

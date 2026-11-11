@@ -1,4 +1,4 @@
-// Pendaftaran dari sisi Tim MB (semua mahasiswa): GET /api/v1/pendaftaran & /{id}, PATCH /api/v1/pendaftaran?id= (ubah status),
+// Pendaftaran dari sisi Panitia Magang (semua mahasiswa): GET /api/v1/pendaftaran & /{id}, PATCH /api/v1/pendaftaran?id= (ubah status),
 // PUT /api/v1/pendaftaran/jadwal-seleksi-substansi & /plot-dpm (satu atau banyak pendaftar).
 // POST /api/v1/pendaftaran/ekspor (berkas Excel dari pendaftaran terpilih, dibuat backend).
 // Unduh berkas: services/berkas.ts. Tipe response & pemetaan tahap dipakai bersama dengan services/pendaftaran.ts.
@@ -91,10 +91,10 @@ export type PendaftarDetail = Omit<Pendaftar, 'adaJadwalSeleksi' | 'adaPlottingD
 }
 
 /**
- * Perubahan status yang boleh dilakukan Tim MB dari tiap status.
+ * Perubahan status yang boleh dilakukan Panitia Magang dari tiap status.
  * Diterima → Aktif dilakukan mahasiswa (konfirmasi penerimaan). Selesai/Tidak Lolos/Batal adalah status akhir.
  */
-export const TRANSISI_TIM_MB: Record<StatusPendaftaran, StatusPendaftaran[]> = {
+export const TRANSISI_PANITIA_MAGANG: Record<StatusPendaftaran, StatusPendaftaran[]> = {
   'Menunggu Verifikasi': ['Lolos Seleksi Administrasi', 'Tidak Lolos'],
   'Lolos Seleksi Administrasi': ['Diterima', 'Tidak Lolos'],
   Diterima: [],
@@ -145,7 +145,7 @@ function toPendaftarDetail(res: PendaftaranDetailResponse): PendaftarDetail {
 // ---- API ----
 
 /**
- * Satu halaman pendaftaran (Tim MB) yang cocok dengan pencarian & filter, dari yang paling baru.
+ * Satu halaman pendaftaran (Panitia Magang) yang cocok dengan pencarian & filter, dari yang paling baru.
  * Pencarian, filter, dan pagination semuanya dikerjakan backend
  */
 export async function getHalamanPendaftar(query: PendaftarQuery, signal?: AbortSignal): Promise<PendaftarHalaman> {

@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import { Outlet } from 'react-router'
 import { cn } from '../../component/cn'
-import { MENU_ITEMS, TIM_MB_MENU_ITEMS, type MenuItem } from './menu'
+import { MENU_ITEMS, PANITIA_MAGANG_MENU_ITEMS, type MenuItem } from './menu'
 import { Navbar } from './Navbar'
 import { Sidebar } from './Sidebar'
 import { SidebarDrawer } from './SidebarDrawer'
@@ -50,7 +50,7 @@ export function MainLayout() {
   return <AppShell menu={MENU_ITEMS} homePath="/" />
 }
 
-/** Layout Tim Magang Berdampak: lebar penuh */
-export function TimMbLayout() {
-  return <AppShell menu={TIM_MB_MENU_ITEMS} homePath="/tim-mb" fullWidth />
+/** Layout Panitia Magang: lebar penuh */
+export function PanitiaMagangLayout() {
+  return <AppShell menu={PANITIA_MAGANG_MENU_ITEMS} homePath="/panitia-magang" fullWidth />
 }

@@ -5,7 +5,7 @@ import { cn } from '../../../../component/cn'
 import { pesanError } from '../../../../services/http'
 import type { LogStatus, StatusPendaftaran } from '../../../../services/pendaftaran'
 import { unduhBerkas } from '../../../../services/berkas'
-import { TRANSISI_TIM_MB, type BerkasPendaftar, type PendaftarDetail } from '../../../../services/pendaftar'
+import { TRANSISI_PANITIA_MAGANG, type BerkasPendaftar, type PendaftarDetail } from '../../../../services/pendaftar'
 import type { Periode } from '../../../../services/periode'
 import { formatTanggal, formatTanggalJadwal, formatUkuran, formatWaktu } from '../../../HalamanDetailPendaftaran/format'
 import { labelPeriode } from '../../periode'
@@ -174,7 +174,7 @@ function ItemBerkas({ berkas }: { berkas: BerkasPendaftar }) {
  */
 function RiwayatStatus({ detail }: { detail: PendaftarDetail }) {
   const log = [...detail.log].reverse()
-  const pilihan = TRANSISI_TIM_MB[detail.status]
+  const pilihan = TRANSISI_PANITIA_MAGANG[detail.status]
   const menungguMahasiswa = detail.status === 'Diterima'
   const adaBerikutnya = pilihan.length > 0 || menungguMahasiswa
 
@@ -311,7 +311,7 @@ function BelumAda({ children }: { children: ReactNode }) {
 }
 
 /**
- * Pilihan "Status berikutnya?" (transisi yang boleh dilakukan Tim MB), dengan konfirmasi.
+ * Pilihan "Status berikutnya?" (transisi yang boleh dilakukan Panitia Magang), dengan konfirmasi.
  * Diberi key status saat ini, sehingga setelah tersimpan pilihan mulai dari awal.
  */
 function StatusBerikutnya({ detail, pilihan }: { detail: PendaftarDetail; pilihan: StatusPendaftaran[] }) {

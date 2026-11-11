@@ -1,6 +1,6 @@
 // Pendaftaran dari sisi mahasiswa: GET /api/v1/pendaftaran & /{id} (hanya miliknya), POST /api/v1/pendaftaran,
 // PATCH /api/v1/pendaftaran/accept (konfirmasi penerimaan).
-// Bentuk response sama dengan sisi Tim MB (services/pendaftar.ts), jadi tipe & pemetaannya dipakai bersama.
+// Bentuk response sama dengan sisi Panitia Magang (services/pendaftar.ts), jadi tipe & pemetaannya dipakai bersama.
 // Surat keterangan dibuat & diunduh lewat services/suratKeterangan.ts.
 
 import { isAxiosError } from 'axios'
@@ -25,36 +25,53 @@ export type StatusPendaftaran = (typeof STATUS_PENDAFTARAN)[number]
  */
 export const idStatus = (status: StatusPendaftaran) => STATUS_PENDAFTARAN.indexOf(status) + 1
 
-/** Status akhir yang tidak dihitung dalam batas pendaftaran */
+/** Status akhir: pendaftaran sudah tidak berjalan */
 const STATUS_SELESAI: readonly StatusPendaftaran[] = ['Selesai', 'Tidak Lolos', 'Batal/Mengundurkan Diri']
 
-/** Jumlah maksimal pendaftaran yang masih berjalan per mahasiswa */
-export const MAX_PENDAFTARAN_BERJALAN = 2
+/**
+ * Jumlah maksimal pendaftaran per mahasiswa dalam satu periode. Semua status dihitung, termasuk yang
+ * batal, tidak lolos, atau selesai (sama dengan backend)
+ */
+export const MAX_PENDAFTARAN_PER_PERIODE = 2
 
 export const isPendaftaranBerjalan = (pendaftaran: Pendaftaran) => !STATUS_SELESAI.includes(pendaftaran.status)
 
-/** Pendaftaran mahasiswa yang masih berjalan, untuk menentukan posisi mana yang masih bisa didaftar */
-export type PendaftaranBerjalan = {
-  /** id posisi yang pendaftarannya belum berakhir. Setelah Selesai/Tidak Lolos/Batal, boleh didaftar lagi */
-  posisi: Set<number>
-  /** Sudah MAX_PENDAFTARAN_BERJALAN pendaftaran berjalan: tidak bisa mendaftar di posisi mana pun */
-  batasTercapai: boolean
+/** Ringkasan pendaftaran mahasiswa, untuk menentukan posisi mana yang masih bisa didaftar */
+export type RiwayatPendaftaran = {
+  /** id posisi yang pendaftarannya belum berakhir. Setelah Selesai/Tidak Lolos/Batal, posisi itu boleh didaftar lagi */
+  posisiBerjalan: Set<number>
+  /** id_periode → jumlah pendaftaran di periode itu, semua status */
+  jumlahPerPeriode: Map<number, number>
 }
 
-export async function getPendaftaranBerjalan(signal?: AbortSignal): Promise<PendaftaranBerjalan> {
-  const berjalan = (await getPendaftaranList(signal)).filter(isPendaftaranBerjalan)
+export function ringkasRiwayat(pendaftaran: Pendaftaran[]): RiwayatPendaftaran {
+  const jumlahPerPeriode = new Map<number, number>()
+  for (const item of pendaftaran) jumlahPerPeriode.set(item.idPeriode, (jumlahPerPeriode.get(item.idPeriode) ?? 0) + 1)
   return {
-    posisi: new Set(berjalan.map((item) => item.idPosisi)),
-    batasTercapai: berjalan.length >= MAX_PENDAFTARAN_BERJALAN,
+    posisiBerjalan: new Set(pendaftaran.filter(isPendaftaranBerjalan).map((item) => item.idPosisi)),
+    jumlahPerPeriode,
   }
 }
+
+export async function getRiwayatPendaftaran(signal?: AbortSignal): Promise<RiwayatPendaftaran> {
+  return ringkasRiwayat(await getPendaftaranList(signal))
+}
+
+export const jumlahDiPeriode = (riwayat: RiwayatPendaftaran, idPeriode: number) =>
+  riwayat.jumlahPerPeriode.get(idPeriode) ?? 0
+
+export const batasPeriodeTercapai = (riwayat: RiwayatPendaftaran, idPeriode: number) =>
+  jumlahDiPeriode(riwayat, idPeriode) >= MAX_PENDAFTARAN_PER_PERIODE
 
 /** Alasan mahasiswa tidak bisa mendaftar di posisi ini (sama dengan aturan backend); null bila bisa */
-export function alasanTidakBisaDaftar(berjalan: PendaftaranBerjalan, idPosisi: number): string | null {
-  if (berjalan.batasTercapai) {
-    return `Kamu sudah memiliki ${MAX_PENDAFTARAN_BERJALAN} pendaftaran yang sedang berjalan.`
+export function alasanTidakBisaDaftar(
+  riwayat: RiwayatPendaftaran,
+  posisi: { id: number; idPeriode: number },
+): string | null {
+  if (batasPeriodeTercapai(riwayat, posisi.idPeriode)) {
+    return `Kamu sudah mendaftar ${MAX_PENDAFTARAN_PER_PERIODE} kali di periode ini.`
   }
-  if (berjalan.posisi.has(idPosisi)) return 'Kamu sudah mendaftar di posisi ini.'
+  if (riwayat.posisiBerjalan.has(posisi.id)) return 'Kamu sudah mendaftar di posisi ini.'
   return null
 }
 
@@ -63,6 +80,8 @@ export type Pendaftaran = {
   /** id_pendaftaran sebagai string (dipakai di URL) */
   id: string
   idPosisi: number
+  /** id_periode dari posisinya */
+  idPeriode: number
   posisi: string
   perusahaan: string
   gambar: string
@@ -180,7 +199,7 @@ export type PendaftaranDetailResponse = Omit<PendaftaranResponse, 'mahasiswa'> &
   plotting_dpm: { nama_dpm: string; kontak_dpm: string } | null
 }
 
-/** Bagian detail yang sama untuk mahasiswa & Tim MB */
+/** Bagian detail yang sama untuk mahasiswa & Panitia Magang */
 export function toTahapPendaftaran(res: PendaftaranDetailResponse) {
   return {
     berkas: res.berkas.map((b) => ({ id: b.id_berkas, jenis: b.jenis_berkas, nama: b.nama_berkas, ukuran: b.ukuran_berkas })),
@@ -200,6 +219,7 @@ const ENDPOINT = '/api/v1/pendaftaran'
 const toPendaftaran = (res: PendaftaranResponse): Pendaftaran => ({
   id: String(res.id_pendaftaran),
   idPosisi: res.id_posisi,
+  idPeriode: res.id_periode,
   posisi: res.posisi,
   perusahaan: res.perusahaan.nama_perusahaan,
   // Seed id_perusahaan: warnanya sama dengan di daftar lowongan

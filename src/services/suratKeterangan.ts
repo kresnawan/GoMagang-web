@@ -1,6 +1,6 @@
 // Surat keterangan kepesertaan magang. Dibuat & ditandatangani (Ed25519) oleh backend saat pertama
 // diunduh dari pendaftaran berstatus Aktif; unduhan berikutnya mendapat file yang sama persis.
-// - Unduh: GET /api/v1/pendaftaran/{id}/surat-keterangan (pemilik & Tim MB)
+// - Unduh: GET /api/v1/pendaftaran/{id}/surat-keterangan (pemilik & Panitia Magang)
 // - Verifikasi publik (tanpa login): GET /api/v1/surat-keterangan/verifikasi?kode= (kode dari QR)
 //   dan POST /api/v1/surat-keterangan/verifikasi (multipart `berkas`, dicocokkan byte per byte)
 

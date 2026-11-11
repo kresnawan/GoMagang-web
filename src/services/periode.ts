@@ -43,7 +43,7 @@ const toPeriode = (res: PeriodeResponse): Periode => ({
 })
 
 /**
- * Daftar periode, dari yang mulai paling akhir. Tanpa status: Tim MB mendapat semua periode,
+ * Daftar periode, dari yang mulai paling akhir. Tanpa status: Panitia Magang mendapat semua periode,
  * mahasiswa hanya yang berlangsung. Mahasiswa hanya boleh memakai status 'berlangsung' (lainnya 403)
  */
 export async function getPeriode(signal?: AbortSignal, status?: StatusPeriode): Promise<Periode[]> {

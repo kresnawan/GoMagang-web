@@ -53,7 +53,7 @@ function Pratinjau({ berkas }: { berkas: BerkasPublik }) {
   )
 }
 
-/** Halaman publik (tanpa login) tujuan link berkas di file Excel hasil ekspor Tim MB */
+/** Halaman publik (tanpa login) tujuan link berkas di file Excel hasil ekspor Panitia Magang */
 export function HalamanBerkasPublik() {
   const hasil = useLoaderData<typeof loader>()
 
@@ -61,7 +61,7 @@ export function HalamanBerkasPublik() {
     return (
       <Kerangka>
         <Pesan judul="Link sudah kedaluwarsa">
-          Link ini berlaku sampai {formatWaktu(hasil.berlakuSampai)}. Minta file ekspor terbaru ke Tim MB untuk membuka
+          Link ini berlaku sampai {formatWaktu(hasil.berlakuSampai)}. Minta file ekspor terbaru ke Panitia Magang untuk membuka
           berkas ini.
         </Pesan>
       </Kerangka>
@@ -72,7 +72,7 @@ export function HalamanBerkasPublik() {
       <Kerangka>
         <Pesan judul="Berkas tidak ditemukan">
           Link ini tidak valid, atau berkasnya sudah tidak tersedia. Pastikan link disalin utuh dari file ekspor, atau
-          minta file ekspor terbaru ke Tim MB.
+          minta file ekspor terbaru ke Panitia Magang.
         </Pesan>
       </Kerangka>
     )
