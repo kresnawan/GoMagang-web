@@ -1,7 +1,3 @@
-// Tombol data tahap di dialog Detail Pendaftar: jadwal seleksi substansi (Lolos Seleksi Administrasi) dan
-// plotting DPM (Aktif). Dialog form-nya dipakai bersama dengan aksi massal di halaman Pendaftar.
-// Surat keterangan tidak diunggah Panitia Magang (rencananya dibuat otomatis dari template).
-
 import { useState, type ReactNode } from 'react'
 import { Button } from '../../../../component'
 import type { JadwalSeleksiSubstansi, PlottingDpm } from '../../../../services/pendaftaran'
@@ -11,7 +7,6 @@ import { PlottingDpmDialog } from '../PlottingDpmDialog'
 
 type PendaftarProps = Pick<PendaftarDetail, 'id' | 'nama' | 'nim'>
 
-/** Tombol pembuka dialog; dialog dipasang hanya saat dibuka sehingga form selalu mulai dari data terbaru */
 function TombolDialog({ label, dialog }: { label: string; dialog: (onClose: () => void) => ReactNode }) {
   const [open, setOpen] = useState(false)
   return (

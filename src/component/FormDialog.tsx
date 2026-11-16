@@ -5,18 +5,14 @@ import { useModalDialog } from './useModalDialog'
 export type FormDialogProps = {
   open: boolean
   title: string
-  /** Isi form (field-field) */
   children: ReactNode
   submitLabel?: string
   cancelLabel?: string
-  /** Saat true, tombol dinonaktifkan dan dialog tidak bisa ditutup */
   loading?: boolean
-  /** Dipanggil setelah validasi native browser lolos */
   onSubmit: (formData: FormData) => void
   onCancel: () => void
 }
 
-/** Dialog modal berisi <form>. Validasi `required`, `min`, dll. berjalan native sebelum onSubmit */
 export function FormDialog({
   open,
   title,

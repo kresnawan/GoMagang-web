@@ -10,14 +10,11 @@ import { INTENT, type action } from './route'
 export type TambahPosisiDialogProps = {
   periode: Periode[]
   perusahaan: Perusahaan[]
-  /** Periode yang terpilih di halaman, jadi nilai awal dropdown periode */
   idPeriodeAwal: number | undefined
   onClose: () => void
-  /** Dipanggil setelah posisi tersimpan, dengan periode posisi tersebut */
   onSuccess: (idPeriode: number) => void
 }
 
-/** Dipasang hanya saat dibuka, sehingga form selalu mulai kosong */
 export function TambahPosisiDialog({ periode, perusahaan, idPeriodeAwal, onClose, onSuccess }: TambahPosisiDialogProps) {
   const fetcher = useFetcher<typeof action>()
   const isSaving = fetcher.state !== 'idle'

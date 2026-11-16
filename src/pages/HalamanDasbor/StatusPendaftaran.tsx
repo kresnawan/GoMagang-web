@@ -2,7 +2,6 @@ import { cn } from '../../component/cn'
 import type { StatusPendaftaran } from '../../services/pendaftaran'
 import { statusToneClass } from './statusTone'
 
-/** Status pendaftaran sebagai badge kecil */
 export function StatusBadge({ status, className }: { status: StatusPendaftaran; className?: string }) {
   return (
     <span
@@ -18,7 +17,6 @@ export function StatusBadge({ status, className }: { status: StatusPendaftaran; 
   )
 }
 
-/** Tahap-tahap pendaftaran yang berjalan normal, berurutan */
 const TAHAP: { status: StatusPendaftaran; label: string }[] = [
   { status: 'Menunggu Verifikasi', label: 'Verifikasi' },
   { status: 'Lolos Seleksi Administrasi', label: 'Administrasi' },
@@ -27,10 +25,6 @@ const TAHAP: { status: StatusPendaftaran; label: string }[] = [
   { status: 'Selesai', label: 'Selesai' },
 ]
 
-/**
- * Progress tahap pendaftaran. Hanya untuk status yang ada di alur normal; Tidak Lolos/Batal tidak punya posisi
- * di alur ini (tahap terakhirnya tidak diketahui dari daftar pendaftaran), jadi tidak ditampilkan
- */
 export function TahapPendaftaran({ status }: { status: StatusPendaftaran }) {
   const sekarang = TAHAP.findIndex((tahap) => tahap.status === status)
   if (sekarang === -1) return null

@@ -23,10 +23,6 @@ function ChevronIcon() {
   )
 }
 
-/**
- * Tombol "Ekspor sebagai" dengan pilihan format. Berkas dibuat backend dari pendaftar terpilih
- * (semua halaman), lalu langsung diunduh
- */
 export function EksporPendaftar({ idPendaftar }: { idPendaftar: number[] }) {
   const [open, setOpen] = useState(false)
   const [mengekspor, setMengekspor] = useState(false)
@@ -40,7 +36,6 @@ export function EksporPendaftar({ idPendaftar }: { idPendaftar: number[] }) {
         ? `Maksimal ${MAX_EKSPOR.toLocaleString('id-ID')} pendaftar dalam satu ekspor.`
         : null
 
-  // Tutup saat klik di luar menu atau tekan Escape (kecuali sedang mengekspor)
   useEffect(() => {
     if (!open || mengekspor) return
     const handlePointerDown = (event: PointerEvent) => {

@@ -1,6 +1,5 @@
 import { extendTailwindMerge } from 'tailwind-merge'
 
-// Daftarkan ukuran heading custom agar `text-h1` dll. tidak dianggap sebagai warna
 const twMerge = extendTailwindMerge({
   extend: {
     classGroups: {

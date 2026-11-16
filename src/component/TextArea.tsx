@@ -3,7 +3,6 @@ import { cn } from './cn'
 
 export type TextAreaProps = ComponentProps<'textarea'>
 
-/** Versi multi-baris dari TextInput, gaya mengikuti guideline input */
 export function TextArea({ className, rows = 4, ...props }: TextAreaProps) {
   return (
     <textarea

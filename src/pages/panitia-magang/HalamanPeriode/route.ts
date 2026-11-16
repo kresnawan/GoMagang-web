@@ -7,7 +7,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return getPeriode(request.signal)
 }
 
-/** Jenis operasi yang dikirim lewat field `intent` */
 export const INTENT = { tambah: 'tambah', mulai: 'mulai', tutup: 'tutup' } as const
 
 const gagal = (error: string, status: number) => data({ ok: false as const, error }, { status })
@@ -29,7 +28,6 @@ async function tambah(formData: FormData, signal: AbortSignal) {
   }
 }
 
-/** Mulai / tutup periode saat ini juga */
 async function ubahStatus(intent: 'mulai' | 'tutup', formData: FormData, signal: AbortSignal) {
   const id = Number(formData.get('id'))
   if (!Number.isSafeInteger(id) || id < 1) return gagal('Periode tidak valid.', 400)

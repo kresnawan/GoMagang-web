@@ -12,7 +12,6 @@ function PesanError({ error }: { error: string | null }) {
   ) : null
 }
 
-/** Hasil action yang sudah selesai: tutup saat berhasil, kembalikan pesan error bila gagal */
 function useHasil(fetcher: ReturnType<typeof useFetcher<typeof action>>, onClose: () => void) {
   const result = fetcher.state === 'idle' ? fetcher.data : undefined
 
@@ -23,7 +22,6 @@ function useHasil(fetcher: ReturnType<typeof useFetcher<typeof action>>, onClose
   return result && !result.ok ? result.error : null
 }
 
-/** Form ubah nama, kuota & deskripsi, diisi nilai saat ini. Dipasang hanya saat dibuka */
 export function UbahPosisiDialog({ posisi, onClose }: { posisi: Posisi; onClose: () => void }) {
   const fetcher = useFetcher<typeof action>()
   const isSaving = fetcher.state !== 'idle'
@@ -69,7 +67,6 @@ export function UbahPosisiDialog({ posisi, onClose }: { posisi: Posisi; onClose:
   )
 }
 
-/** Konfirmasi menyembunyikan posisi. Dipasang hanya saat dibuka */
 export function SembunyikanPosisiDialog({ posisi, onClose }: { posisi: Posisi; onClose: () => void }) {
   const fetcher = useFetcher<typeof action>()
   const isSaving = fetcher.state !== 'idle'

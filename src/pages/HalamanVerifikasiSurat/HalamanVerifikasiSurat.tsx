@@ -6,7 +6,6 @@ import { MAX_FILE_SIZE } from '../../services/lowongan'
 import type { SuratTerverifikasi } from '../../services/suratKeterangan'
 import type { action, HasilVerifikasi, loader } from './route'
 
-/** "6 November 2026" dari "2026-11-06" (tanpa nama hari) */
 const tanggalFormat = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
 const formatTanggal = (tanggal: string) => tanggalFormat.format(new Date(`${tanggal}T00:00`))
 
@@ -131,7 +130,6 @@ function PeriksaBerkas() {
   )
 }
 
-/** Halaman publik (tanpa login) tujuan QR pada surat keterangan magang */
 export function HalamanVerifikasiSurat() {
   const { kode, hasil } = useLoaderData<typeof loader>()
 

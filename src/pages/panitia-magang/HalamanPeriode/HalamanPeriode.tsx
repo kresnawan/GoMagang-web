@@ -17,10 +17,8 @@ const STATUS_CLASS: Record<StatusPeriode, string> = {
   Selesai: 'bg-brand-100 text-brand-700',
 }
 
-/** Dipasang hanya saat dibuka, sehingga form selalu mulai kosong */
 function TambahPeriodeDialog({ onClose }: { onClose: () => void }) {
   const fetcher = useFetcher<typeof action>()
-  // Waktu tutup tidak boleh sebelum waktu mulai (dicek juga di action & service)
   const [waktuMulai, setWaktuMulai] = useState('')
   const isSaving = fetcher.state !== 'idle'
   const result = fetcher.state === 'idle' ? fetcher.data : undefined
@@ -69,7 +67,6 @@ function TambahPeriodeDialog({ onClose }: { onClose: () => void }) {
 
 type Operasi = { intent: typeof INTENT.mulai | typeof INTENT.tutup; periode: Periode }
 
-/** Konfirmasi mulai / tutup periode saat ini juga. Dipasang hanya saat dibuka */
 function UbahStatusDialog({ operasi, onClose }: { operasi: Operasi; onClose: () => void }) {
   const fetcher = useFetcher<typeof action>()
   const isSaving = fetcher.state !== 'idle'
@@ -117,7 +114,6 @@ function UbahStatusDialog({ operasi, onClose }: { operasi: Operasi; onClose: () 
   )
 }
 
-/** Tombol di kolom Aksi: mulai untuk periode akan datang, tutup untuk yang berjalan */
 function AksiPeriode({ periode, onPilih }: { periode: Periode; onPilih: (operasi: Operasi) => void }) {
   if (periode.status === 'belum_dimulai') {
     return (
@@ -157,7 +153,6 @@ export function HalamanPeriode() {
           <TambahButton onClick={() => setDialogOpen(true)} />
         </div>
 
-        {/* Di mobile kolom waktu disembunyikan; rentang waktu tampil di bawah catatan */}
         <div className={t.wrapper}>
           <table className={t.table}>
             <thead className={t.thead}>

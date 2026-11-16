@@ -4,7 +4,6 @@ import { Button, ConfirmDialog } from '../../component'
 import type { PendaftaranDetail } from '../../services/pendaftaran'
 import { INTENT_KONFIRMASI, type action } from './route'
 
-/** Tombol konfirmasi penerimaan + dialog. Tampil di titik log "Diterima" selama status masih Diterima */
 export function KonfirmasiPenerimaan({ pendaftaran }: { pendaftaran: PendaftaranDetail }) {
   const [open, setOpen] = useState(false)
 
@@ -19,10 +18,6 @@ export function KonfirmasiPenerimaan({ pendaftaran }: { pendaftaran: Pendaftaran
   )
 }
 
-/**
- * Dipasang hanya saat dibuka, sehingga pesan error dari percobaan sebelumnya tidak terbawa.
- * Setelah berhasil, loader memuat ulang data → status Aktif → tombol & dialog ini hilang sendiri
- */
 function KonfirmasiDialog({ pendaftaran, onClose }: { pendaftaran: PendaftaranDetail; onClose: () => void }) {
   const fetcher = useFetcher<typeof action>()
   const isSending = fetcher.state !== 'idle'

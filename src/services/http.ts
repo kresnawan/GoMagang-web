@@ -1,27 +1,23 @@
-// Axios instance untuk semua request ke backend.
-//
-// Skema auth (mengikuti backend):
-// - Access token & refresh token disimpan backend sebagai cookie HttpOnly. Frontend tidak pernah
-//   memegang token; cookie ikut terkirim otomatis karena `withCredentials: true`.
-// - Jika response 401: panggil REFRESH_ENDPOINT (backend memasang cookie baru), lalu ulangi request.
-//   Beberapa request yang gagal bersamaan hanya memicu SATU kali refresh.
-// - Jika refresh gagal: onSessionExpired dipanggil (default: ke halaman login).
-
 import axios, { isAxiosError, type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 
 declare module 'axios' {
   interface AxiosRequestConfig {
-    /** true: jangan coba refresh token bila request ini 401 */
     skipAuthRefresh?: boolean
-    /** Internal: penanda request sudah diulang sekali setelah refresh */
     _retry?: boolean
   }
 }
 
-const API_URL: string = import.meta.env.VITE_API_URL ?? ''
+const API_URL = String(import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '')
+const API_VERSION: unknown = import.meta.env.API_VERSION
+if (typeof API_VERSION !== 'string' || !API_VERSION) {
+  throw new Error('API_VERSION belum diisi di file .env')
+}
+
+export const BACKEND_URL = API_URL.replace(/\/api$/, '')
+export const API_BASE_URL = `${API_URL}/${API_VERSION}`
+
 export const REFRESH_ENDPOINT = '/auth/refresh'
 
-/** Dipanggil saat sesi tidak bisa diperpanjang. Bisa diganti lewat setOnSessionExpired */
 let onSessionExpired: () => void = () => {
   window.location.assign('/login?error=session')
 }
@@ -29,29 +25,22 @@ export function setOnSessionExpired(handler: () => void) {
   onSessionExpired = handler
 }
 
-// ---- Instance ----
-
 const baseConfig = {
-  baseURL: API_URL,
   withCredentials: true,
   timeout: 30_000,
   headers: { Accept: 'application/json' },
 }
 
-export const api = axios.create(baseConfig)
+export const api = axios.create({ ...baseConfig, baseURL: API_BASE_URL })
 
-/**
- * Instance TANPA interceptor untuk endpoint auth (me, refresh, logout):
- * 401 di sini tidak memicu refresh berulang maupun redirect otomatis
- */
-export const authClient = axios.create(baseConfig)
+export const publicApi = axios.create({ ...baseConfig, baseURL: API_BASE_URL })
+
+export const authClient = axios.create({ ...baseConfig, baseURL: BACKEND_URL })
 
 export const isUnauthorized = (error: unknown) => isAxiosError(error) && error.response?.status === 401
 
-// Satu promise refresh yang dipakai bersama oleh semua request yang 401 bersamaan
 let refreshPromise: Promise<void> | null = null
 
-/** Minta backend memperpanjang sesi (cookie baru dipasang lewat response) */
 export function refreshSession(): Promise<void> {
   refreshPromise ??= authClient
     .post(REFRESH_ENDPOINT)
@@ -61,8 +50,6 @@ export function refreshSession(): Promise<void> {
     })
   return refreshPromise
 }
-
-// ---- Interceptor ----
 
 api.interceptors.response.use(
   (response) => response,
@@ -85,9 +72,6 @@ api.interceptors.response.use(
   },
 )
 
-// ---- Helper ----
-
-/** Pesan error yang ramah untuk ditampilkan; pakai `message` dari body response bila ada */
 export function pesanError(error: unknown, fallback = 'Terjadi kesalahan. Coba lagi.') {
   if (isAxiosError(error)) {
     const message = (error.response?.data as { message?: unknown } | undefined)?.message

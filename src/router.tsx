@@ -49,7 +49,6 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  // Panitia Magang
   {
     path: '/panitia-magang',
     Component: PanitiaMagangLayout,
@@ -74,10 +73,7 @@ export const router = createBrowserRouter([
     ],
   },
   { path: '/login', ...loginRoute, loader: loginLoader, HydrateFallback: MemuatSesi },
-  // Tujuan QR pada surat keterangan magang (publik, tanpa guard)
   { path: '/verifikasi-surat', ...verifikasiSuratRoute },
-  // Tujuan link berkas di file Excel hasil ekspor Panitia Magang (publik, tanpa guard)
   { path: '/berkas/:token', ...berkasPublikRoute },
-  // Playground komponen UI (publik, tanpa guard)
   { path: '/komponen', Component: App },
 ])

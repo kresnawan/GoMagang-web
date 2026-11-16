@@ -2,13 +2,10 @@ import { useEffect, useRef, useState, type ChangeEvent, type ComponentProps, typ
 import { cn } from './cn'
 
 export type FileInputProps = Omit<ComponentProps<'input'>, 'type'> & {
-  /** Teks utama di kotak upload */
   label?: string
-  /** Teks kecil di bawah label. Default: nilai `accept`, mis. "(.pdf)" */
   hint?: string
 }
 
-/** File yang sama (dipilih dua kali) tidak ditambahkan lagi */
 const fileSama = (a: File, b: File) => a.name === b.name && a.size === b.size && a.lastModified === b.lastModified
 
 function keFileList(files: File[]) {
@@ -35,10 +32,8 @@ export function FileInput({
 }: FileInputProps) {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [files, setFiles] = useState<File[]>([])
-  // true saat isi input diganti dari sini (hapus file), bukan dari pemilih file
   const menggantiRef = useRef(false)
 
-  // Sinkronkan state saat form di-reset
   useEffect(() => {
     const form = inputRef.current?.form
     if (!form) return
@@ -50,7 +45,6 @@ export function FileInput({
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
     const input = event.target
     let dipilih = Array.from(input.files ?? [])
-    // multiple: pilihan baru ditambahkan ke file sebelumnya (pemilih file bawaan browser selalu mengganti)
     if (multiple && !menggantiRef.current && files.length > 0) {
       dipilih = [...files, ...dipilih.filter((file) => !files.some((lama) => fileSama(lama, file)))]
       input.files = keFileList(dipilih)
@@ -65,7 +59,6 @@ export function FileInput({
     if (!input) return
     input.files = keFileList(files.filter((_, i) => i !== index))
     menggantiRef.current = true
-    // Picu change event native agar onChange milik parent ikut terpanggil
     input.dispatchEvent(new Event('change', { bubbles: true }))
   }
 
@@ -84,7 +77,6 @@ export function FileInput({
           'relative flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-brand-300 bg-white px-4 py-8 text-center text-brand-300 transition-colors',
           'has-[input:hover]:bg-brand-100 has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-brand-300/50',
           disabled && 'cursor-not-allowed bg-brand-200',
-          // Satu file: kotak diganti daftar file. Banyak file: kotak mengecil di bawah daftar untuk menambah lagi
           files.length > 0 && (multiple ? 'order-last border-dashed py-3' : 'hidden'),
         )}
       >

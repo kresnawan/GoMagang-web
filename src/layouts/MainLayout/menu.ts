@@ -3,7 +3,6 @@ export type MenuItem = {
   to: string
 }
 
-// Tambahkan menu baru di sini; Sidebar desktop & drawer mobile ikut terupdate
 export const MENU_ITEMS: MenuItem[] = [
   { label: 'Dasbor', to: '/dasbor' },
   { label: 'Data Diri', to: '/data-diri' },

@@ -8,16 +8,10 @@ import { SidebarDrawer } from './SidebarDrawer'
 
 type AppShellProps = {
   menu: MenuItem[]
-  /** Tujuan link logo */
   homePath: string
-  /** true: navbar & konten melebar sampai tepi kanan (tanpa 2 kolom kosong) */
   fullWidth?: boolean
 }
 
-/**
- * Desktop: grid 12 kolom — sidebar 2 kolom, navbar & konten 8 kolom (2 kolom kanan kosong),
- * atau 10 kolom jika fullWidth. Mobile & tablet: sidebar disembunyikan, dibuka lewat burger di navbar.
- */
 function AppShell({ menu, homePath, fullWidth = false }: AppShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const closeDrawer = useCallback(() => setDrawerOpen(false), [])
@@ -35,7 +29,7 @@ function AppShell({ menu, homePath, fullWidth = false }: AppShellProps) {
         )}
       >
         <Navbar homePath={homePath} onMenuClick={() => setDrawerOpen(true)} />
-        <main className="flex-1 rounded-sm border border-brand-300 bg-white p-5 sm:p-8 lg:p-10">
+        <main className="flex-1 bg-white py-2 sm:rounded-sm sm:border sm:border-brand-300 sm:p-8 lg:p-10">
           <Outlet />
         </main>
       </div>
@@ -45,12 +39,10 @@ function AppShell({ menu, homePath, fullWidth = false }: AppShellProps) {
   )
 }
 
-/** Layout mahasiswa */
 export function MainLayout() {
   return <AppShell menu={MENU_ITEMS} homePath="/" />
 }
 
-/** Layout Panitia Magang: lebar penuh */
 export function PanitiaMagangLayout() {
   return <AppShell menu={PANITIA_MAGANG_MENU_ITEMS} homePath="/panitia-magang" fullWidth />
 }

@@ -11,17 +11,14 @@ import {
   type MataKuliahInput,
 } from '../../../services/konversiMk'
 
-/** Semua MK, termasuk yang sudah dihapus (ditampilkan di bagian bawah halaman) */
 export async function loader({ request }: LoaderFunctionArgs) {
   return getMataKuliahKonversi(request.signal, true)
 }
 
-/** Jenis operasi yang dikirim lewat field `intent` */
 export const INTENT = { tambah: 'tambah', hapus: 'hapus' } as const
 
 const gagal = (error: string, status: number) => data({ ok: false as const, error }, { status })
 
-/** Isi form tambah MK, atau pesan kesalahannya */
 function bacaInput(formData: FormData): MataKuliahInput | { error: string } {
   const mkAsal = String(formData.get('mkAsal') ?? '').trim()
   const mkKonversi = String(formData.get('mkKonversi') ?? '').trim()

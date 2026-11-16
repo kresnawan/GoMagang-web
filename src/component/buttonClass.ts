@@ -7,7 +7,6 @@ const variants: Record<ButtonVariant, string> = {
   outlined: 'border-brand-700 bg-white text-brand-700 hover:bg-brand-100',
 }
 
-/** Class tampilan Button; bisa dipakai juga untuk <a>/<Link> yang perlu terlihat seperti tombol */
 export function buttonClass(variant: ButtonVariant = 'fill', className?: string) {
   return cn(
     'inline-flex cursor-pointer items-center justify-center gap-2 rounded-sm border px-8 py-2.5 text-base font-bold outline-none transition-colors',

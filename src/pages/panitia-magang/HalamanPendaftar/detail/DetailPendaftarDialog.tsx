@@ -18,12 +18,10 @@ export type DetailPendaftarDialogProps = {
   onClose: () => void
 }
 
-/** Dialog detail pendaftar: data diri, pendaftaran, berkas, dan riwayat status (dengan tombol ubah status) */
 export function DetailPendaftarDialog({ idPendaftar, periode, onClose }: DetailPendaftarDialogProps) {
   const fetcher = useFetcher<typeof loader>()
   const { load } = fetcher
 
-  // Data dimuat saat dialog dibuka; otomatis dimuat ulang setelah status diubah (revalidasi)
   useEffect(() => {
     load(detailPendaftarPath(idPendaftar))
   }, [idPendaftar, load])
@@ -50,8 +48,6 @@ export function DetailPendaftarDialog({ idPendaftar, periode, onClose }: DetailP
     </Dialog>
   )
 }
-
-// ---- Section kiri ----
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -166,12 +162,6 @@ function ItemBerkas({ berkas }: { berkas: BerkasPendaftar }) {
   )
 }
 
-// ---- Section kanan: riwayat status ----
-
-/**
- * Timeline vertikal: pilihan "Status berikutnya?" di paling atas, lalu status saat ini,
- * lalu status-status sebelumnya ke bawah (paling lama di paling bawah).
- */
 function RiwayatStatus({ detail }: { detail: PendaftarDetail }) {
   const log = [...detail.log].reverse()
   const pilihan = TRANSISI_PANITIA_MAGANG[detail.status]
@@ -230,14 +220,12 @@ function RiwayatStatus({ detail }: { detail: PendaftarDetail }) {
 }
 
 type BarisTimelineProps = {
-  /** Titik di kolom kiri; kosong untuk baris "Status berikutnya?" */
   titik?: ReactNode
   garisAtas?: boolean
   garisBawah?: boolean
   children: ReactNode
 }
 
-/** Satu baris timeline: kolom kiri berisi garis + titik (di tengah vertikal), kolom kanan isi */
 function BarisTimeline({ titik, garisAtas = false, garisBawah = false, children }: BarisTimelineProps) {
   return (
     <li className="grid grid-cols-[1.25rem_1fr] gap-x-4">
@@ -251,11 +239,6 @@ function BarisTimeline({ titik, garisAtas = false, garisBawah = false, children 
   )
 }
 
-/**
- * Data tahap di bawah status Lolos Seleksi Administrasi (jadwal seleksi) dan Aktif (plotting DPM).
- * Selalu ditampilkan, termasuk setelah status terlewat; tombol tambah/unggah hanya ada selama status itu
- * masih status saat ini
- */
 function InfoLog({ log, detail }: { log: LogStatus; detail: PendaftarDetail }) {
   const statusSaatIni = log.statusBaru === detail.status
 
@@ -310,10 +293,6 @@ function BelumAda({ children }: { children: ReactNode }) {
   return <p className="text-brand-500 italic">{children}</p>
 }
 
-/**
- * Pilihan "Status berikutnya?" (transisi yang boleh dilakukan Panitia Magang), dengan konfirmasi.
- * Diberi key status saat ini, sehingga setelah tersimpan pilihan mulai dari awal.
- */
 function StatusBerikutnya({ detail, pilihan }: { detail: PendaftarDetail; pilihan: StatusPendaftaran[] }) {
   const [target, setTarget] = useState<StatusPendaftaran | null>(null)
 
@@ -342,7 +321,6 @@ function StatusBerikutnya({ detail, pilihan }: { detail: PendaftarDetail; piliha
   )
 }
 
-/** Dipasang hanya saat dibuka, sehingga pesan error dari percobaan sebelumnya tidak terbawa */
 function KonfirmasiUbahStatus({
   detail,
   target,

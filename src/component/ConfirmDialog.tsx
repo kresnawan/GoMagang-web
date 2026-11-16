@@ -8,15 +8,12 @@ export type ConfirmDialogProps = {
   children?: ReactNode
   confirmLabel?: string
   cancelLabel?: string
-  /** Saat true, tombol dinonaktifkan dan dialog tidak bisa ditutup */
   loading?: boolean
-  /** Nonaktifkan hanya tombol konfirmasi, mis. selama belum ada pilihan */
   confirmDisabled?: boolean
   onConfirm: () => void
   onCancel: () => void
 }
 
-/** Dialog modal konfirmasi berbasis <dialog> native */
 export function ConfirmDialog({
   open,
   title,
@@ -35,7 +32,6 @@ export function ConfirmDialog({
     <dialog
       ref={dialogRef}
       aria-labelledby={titleId}
-      // Esc: tutup, kecuali sedang memproses
       onCancel={(event) => {
         event.preventDefault()
         if (!loading) onCancel()

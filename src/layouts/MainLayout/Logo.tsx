@@ -5,11 +5,9 @@ import { cn } from '../../component/cn'
 type LogoProps = {
   to?: string
   className?: string
-  /** Ukuran gambar logo; bawaan setinggi 40px */
   imgClassName?: string
 }
 
-/** Logo horizontal GoMagang (ikon + tulisan); dipakai di sidebar dan navbar mobile */
 export function Logo({ to = '/', className, imgClassName }: LogoProps) {
   return (
     <Link

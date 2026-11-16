@@ -8,11 +8,9 @@ type PaginationProps = {
   halaman: number
 }
 
-/** Dropdown jumlah baris + navigasi halaman, disimpan di URL */
 export function Pagination({ total, rows, halaman }: PaginationProps) {
   const [, setSearchParams] = useSearchParams()
   const jumlahHalaman = Math.max(1, Math.ceil(total / rows))
-  // Halaman di luar jangkauan (mis. dari URL lama) tetap valid di backend tapi kosong
   const diLuarJangkauan = halaman > jumlahHalaman
   const awal = total === 0 || diLuarJangkauan ? 0 : (halaman - 1) * rows + 1
   const akhir = diLuarJangkauan ? 0 : Math.min(halaman * rows, total)
@@ -55,7 +53,6 @@ export function Pagination({ total, rows, halaman }: PaginationProps) {
           className="px-3 py-1"
           aria-label="Halaman sebelumnya"
           disabled={halaman <= 1}
-          // Dari halaman di luar jangkauan, langsung ke halaman terakhir
           onClick={() => setParam({ [PARAM.p]: String(Math.min(halaman - 1, jumlahHalaman)) })}
         >
           ‹

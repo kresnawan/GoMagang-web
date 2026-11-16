@@ -11,19 +11,12 @@ import {
 import { INTENT, PENDAFTAR_ACTION, type action } from './route'
 
 export type JadwalSeleksiDialogProps = {
-  /** Satu (dari dialog Detail) atau banyak (aksi massal); semuanya berstatus Lolos Seleksi Administrasi */
   pendaftar: Array<Pick<PendaftarRingkas, 'id' | 'nama' | 'nim'>>
-  /** Jadwal yang sudah ada, untuk mengisi form (hanya bila satu pendaftar) */
   jadwalAwal?: JadwalSeleksiSubstansi | null
   onClose: () => void
-  /** Dipanggil setelah tersimpan, sebelum dialog ditutup */
   onSuccess?: () => void
 }
 
-/**
- * Form jadwal seleksi substansi untuk satu atau banyak pendaftar (PUT /api/v1/pendaftaran/jadwal-seleksi-substansi).
- * Dipasang hanya saat dibuka, sehingga form & pesan error selalu mulai dari awal
- */
 export function JadwalSeleksiDialog({ pendaftar, jadwalAwal = null, onClose, onSuccess }: JadwalSeleksiDialogProps) {
   const fetcher = useFetcher<typeof action>()
   const [errorLokal, setErrorLokal] = useState<string | null>(null)

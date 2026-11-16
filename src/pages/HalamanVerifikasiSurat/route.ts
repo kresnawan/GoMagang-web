@@ -9,7 +9,6 @@ export type HasilVerifikasi =
   | { status: 'tidak-dikenal' }
   | { status: 'gagal'; pesan: string }
 
-/** Error jaringan/server ditampilkan di halaman (bukan ErrorBoundary): pengunjungnya orang luar */
 function gagal(err: unknown): HasilVerifikasi {
   const pesan =
     isAxiosError(err) && err.response?.status === 503
@@ -21,7 +20,6 @@ function gagal(err: unknown): HasilVerifikasi {
 const hasil = (surat: SuratTerverifikasi | null): HasilVerifikasi =>
   surat ? { status: 'asli', surat } : { status: 'tidak-dikenal' }
 
-/** Dibuka dari QR pada surat: /verifikasi-surat?kode={id}.{tanda tangan} */
 export async function loader({ request }: LoaderFunctionArgs) {
   const kode = new URL(request.url).searchParams.get('kode')?.trim() || null
   if (!kode) return { kode, hasil: null }
@@ -32,7 +30,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 }
 
-/** Unggah PDF: dianggap asli hanya bila sama persis (byte per byte) dengan yang diterbitkan */
 export async function action({ request }: ActionFunctionArgs): Promise<HasilVerifikasi> {
   const berkas = (await request.formData()).get('berkas')
   if (!(berkas instanceof File) || berkas.size === 0) {

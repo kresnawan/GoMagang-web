@@ -59,7 +59,6 @@ export function HalamanKonversiMK() {
 
           <TabelMk penyetaraan={penyetaraan} />
 
-          {/* Dipasang hanya saat dibuka agar pencarian & pilihan selalu mulai dari kosong */}
           {dialogOpen && (
             <TambahMkDialog
               open

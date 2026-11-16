@@ -1,4 +1,3 @@
-// Route data (tanpa tampilan) untuk dialog Detail: dimuat lewat fetcher.load, status diubah lewat fetcher.submit
 import { isAxiosError } from 'axios'
 import { data, type ActionFunctionArgs, type LoaderFunctionArgs } from 'react-router'
 import { pesanError } from '../../../../services/http'
@@ -18,7 +17,6 @@ const gagal = (error: string, status: number) => data({ ok: false as const, erro
 const isStatus = (value: unknown): value is StatusPendaftaran =>
   STATUS_PENDAFTARAN.includes(value as StatusPendaftaran)
 
-/** Ubah status satu pendaftar; setelah berhasil, daftar & detail dimuat ulang otomatis (revalidasi) */
 export async function action({ request, params }: ActionFunctionArgs) {
   const id = Number(params.idPendaftar)
   if (!Number.isSafeInteger(id) || id < 1) return gagal('Pendaftar tidak valid.', 400)

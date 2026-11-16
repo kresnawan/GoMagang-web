@@ -62,11 +62,9 @@ export function HalamanDasbor() {
   )
 }
 
-/** Jumlah pendaftaran di periode yang berlangsung; semua status dihitung, termasuk yang batal/tidak lolos */
 const jumlahDiPeriodeBerjalan = (pendaftaran: Pendaftaran[], periode: Periode) =>
   jumlahDiPeriode(ringkasRiwayat(pendaftaran), periode.id)
 
-/** Tombol Cari Lowongan hanya bila periode berlangsung dan jatahnya masih ada (atau periodenya gagal dimuat) */
 function bisaMendaftar(pendaftaran: Pendaftaran[], periode: Periode | null | undefined) {
   if (periode === undefined) return true
   return periode !== null && jumlahDiPeriodeBerjalan(pendaftaran, periode) < MAX_PENDAFTARAN_PER_PERIODE
@@ -89,7 +87,6 @@ function JatahPendaftaran({ pendaftaran, periode }: { pendaftaran: Pendaftaran[]
   )
 }
 
-/** Pendaftaran yang sudah berakhir; dilipat secara default agar tidak mengalihkan dari yang berjalan */
 function Riwayat({ pendaftaran }: { pendaftaran: Pendaftaran[] }) {
   const [terbuka, setTerbuka] = useState(false)
 
@@ -140,7 +137,6 @@ const LANGKAH_AWAL = [
   { judul: 'Pilih lowongan', teks: 'Daftar ke posisi magang yang kamu minati.', to: '/pendaftaran', label: 'Cari lowongan' },
 ]
 
-/** Empty state: belum ada pendaftaran sama sekali */
 function MulaiMendaftar() {
   return (
     <section aria-labelledby="dasbor-mulai">

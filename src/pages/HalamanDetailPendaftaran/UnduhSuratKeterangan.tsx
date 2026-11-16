@@ -13,11 +13,6 @@ function pesanGagal(err: unknown) {
   return pesanError(err, 'Gagal mengunduh surat keterangan. Coba lagi.')
 }
 
-/**
- * Tombol unduh surat keterangan magang di titik log "Aktif". Surat dibuat & ditandatangani backend
- * saat pertama diunduh, jadi tombol ini muncul selama status Aktif, atau setelahnya bila surat
- * sudah pernah diterbitkan
- */
 export function UnduhSuratKeterangan({ pendaftaran }: { pendaftaran: PendaftaranDetail }) {
   const [mengunduh, setMengunduh] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -31,7 +26,6 @@ export function UnduhSuratKeterangan({ pendaftaran }: { pendaftaran: Pendaftaran
     setError(null)
     try {
       await unduhSuratKeterangan(pendaftaran.id)
-      // Unduhan pertama menerbitkan surat: muat ulang agar nomor suratnya tampil
       if (!surat) await revalidate()
     } catch (err) {
       setError(pesanGagal(err))

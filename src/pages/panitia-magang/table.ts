@@ -1,4 +1,3 @@
-/** Gaya tabel bersama untuk halaman Panitia Magang */
 export const tableClass = {
   wrapper: 'overflow-x-auto rounded-sm border border-brand-300',
   table: 'w-full border-collapse',

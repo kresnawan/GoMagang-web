@@ -4,7 +4,6 @@ import { logout } from '../../services/auth'
 import { pesanError } from '../../services/http'
 import { LogoutIcon, UserIcon } from './icons'
 
-/** Avatar profil (mockup) dengan dialog kecil berisi Logout */
 export function ProfileMenu() {
   const [open, setOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
@@ -12,7 +11,6 @@ export function ProfileMenu() {
   const navigate = useNavigate()
   const rootRef = useRef<HTMLDivElement>(null)
 
-  // Tutup saat klik di luar menu atau tekan Escape
   useEffect(() => {
     if (!open) return
     const handlePointerDown = (event: PointerEvent) => {

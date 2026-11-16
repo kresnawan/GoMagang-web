@@ -7,20 +7,15 @@ import { getPerusahaan } from '../../../services/perusahaan'
 
 export const PERIODE_PARAM = 'periode'
 
-/** Jenis operasi yang dikirim lewat field `intent` */
 export const INTENT = { tambah: 'tambah', ubah: 'ubah', sembunyikan: 'sembunyikan' } as const
 
-/** Periode yang sedang berjalan; jika tidak ada, yang mulai paling akhir (daftar sudah urut terbaru dulu) */
 const periodeDefault = (periode: Periode[]) => periode.find((item) => item.status === 'berlangsung') ?? periode[0] ?? null
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  // Perusahaan untuk dropdown dialog tambah
   const [periode, perusahaan] = await Promise.all([getPeriode(request.signal), getPerusahaan(request.signal)])
 
-  // Periode dipilih lewat URL (?periode=); default periode yang sedang berjalan
   const idDipilih = Number(new URL(request.url).searchParams.get(PERIODE_PARAM))
   const terpilih = periode.find((item) => item.id === idDipilih) ?? periodeDefault(periode)
-  // Termasuk yang disembunyikan, untuk bagian "Tampilkan posisi yang disembunyikan"
   const posisi = terpilih ? await getPosisiList({ idPeriode: terpilih.id, termasukDisembunyikan: true }, request.signal) : []
 
   return { periode, perusahaan, terpilih, posisi }
@@ -28,17 +23,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 const gagal = (error: string, status: number) => data({ ok: false as const, error }, { status })
 
-/** "" atau bukan bilangan bulat positif → NaN */
 const toId = (value: string) => (/^[1-9][0-9]*$/.test(value) ? Number(value) : NaN)
 
 const POSISI_TIDAK_ADA = 'Posisi tidak ditemukan atau sudah disembunyikan. Muat ulang halaman.'
 
-/** Nama, deskripsi & kuota dari form (dipakai tambah & ubah), atau pesan kesalahannya */
 function bacaIsi(formData: FormData) {
   const get = (key: string) => String(formData.get(key) ?? '').trim()
   const isi = { posisi: get('posisi'), deskripsiPersyaratan: get('deskripsiPersyaratan'), kuota: Number(get('kuota')) }
 
-  // Validasi ulang (validasi native browser bisa dilewati); aturan sama dengan backend
   if (!isi.posisi || !isi.deskripsiPersyaratan || !get('kuota')) return { error: 'Semua kolom wajib diisi.' }
   if ([...isi.posisi].length > NAMA_POSISI_MAX) return { error: `Nama posisi maksimal ${NAMA_POSISI_MAX} karakter.` }
   if (!Number.isSafeInteger(isi.kuota) || isi.kuota < 1) return { error: 'Kuota harus bilangan bulat minimal 1.' }

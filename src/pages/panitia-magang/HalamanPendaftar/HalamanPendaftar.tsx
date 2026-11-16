@@ -22,7 +22,6 @@ type PendaftarItemProps = {
   onDetail: () => void
 }
 
-/** Data yang disimpan untuk pendaftar terpilih */
 const ringkas = ({ id, status, nama, nim, adaJadwalSeleksi, adaPlottingDpm }: PendaftarRingkas): PendaftarRingkas => ({
   id,
   status,
@@ -44,7 +43,6 @@ function PendaftarItem({ pendaftar, checked, onToggle, onDetail }: PendaftarItem
           {pendaftar.nim} · {pendaftar.posisi} — {pendaftar.perusahaan}
         </p>
       </div>
-      {/* Di mobile status & Detail turun ke baris berikutnya, sejajar dengan teks */}
       <div className="flex w-full items-center justify-between gap-4 pl-9 sm:w-auto sm:pl-0">
         <span className={cn('inline-flex items-center gap-2 text-sm font-bold sm:w-56', tone.text)}>
           <span className={cn('size-2.5 shrink-0 rounded-full', tone.dot)} aria-hidden />
@@ -60,17 +58,12 @@ function PendaftarItem({ pendaftar, checked, onToggle, onDetail }: PendaftarItem
 
 export function HalamanPendaftar() {
   const { rows, halaman, items, total } = useLoaderData<typeof loader>()
-  // Dari route induk; selalu ada karena route induk selesai dimuat sebelum halaman ini dirender
   const { periode, perusahaan, posisi } = useRouteLoaderData<typeof referensiLoader>(REFERENSI_ROUTE_ID)!
   const [searchParams] = useSearchParams()
   const navigation = useNavigation()
 
-  // Pilihan disimpan per filter (jika filter berubah, pilihan otomatis kosong tanpa effect) dan tetap ada
-  // saat pindah halaman, sehingga bisa dikumpulkan lintas halaman
   const kunci = kunciFilter(searchParams)
   const [pilihan, setPilihan] = useState<{ kunci: string; data: Map<number, PendaftarRingkas> }>(() => ({ kunci, data: new Map() }))
-  // Baris di halaman ini memakai data terbaru dari loader (status/jadwal bisa berubah, mis. lewat dialog Detail);
-  // pilihan dari halaman lain memakai data saat dipilih
   const itemById = new Map(items.map((item) => [item.id, item]))
   const terpilih = new Map<number, PendaftarRingkas>()
   if (pilihan.kunci === kunci) {
@@ -82,11 +75,9 @@ export function HalamanPendaftar() {
   const semuaTerpilih = total > 0 && terpilih.size >= total && terpilihDiHalaman === items.length
   const sebagian = terpilih.size > 0 && !semuaTerpilih
 
-  // "Pilih semua" mengambil semua baris yang cocok dengan filter dari backend (bukan hanya halaman ini)
   const [memilihSemua, setMemilihSemua] = useState(false)
   const [errorPilihSemua, setErrorPilihSemua] = useState<string | null>(null)
   const permintaanSemua = useRef<AbortController | null>(null)
-  // Batalkan permintaan yang masih berjalan bila filter berganti atau halaman ditinggalkan
   useEffect(() => () => permintaanSemua.current?.abort(), [kunci])
 
   function toggle(item: Pendaftar) {
@@ -96,7 +87,6 @@ export function HalamanPendaftar() {
     setPilihan({ kunci, data })
   }
 
-  /** Pilih semua pendaftar yang cocok dengan filter, di semua halaman; bila semuanya sudah terpilih, kosongkan */
   async function togglePilihSemua() {
     setErrorPilihSemua(null)
     if (semuaTerpilih) {
@@ -111,7 +101,6 @@ export function HalamanPendaftar() {
     const { p: _p, r: _r, ...filter } = parsePendaftarParams(searchParams)
     try {
       const semua = await getSemuaPendaftar(filter, total, controller.signal)
-      // Disimpan dengan kunci filter saat diminta: bila filter sudah berganti, pilihan ini otomatis diabaikan
       setPilihan({ kunci, data: new Map(semua.map((item) => [item.id, ringkas(item)])) })
     } catch {
       if (!controller.signal.aborted) setErrorPilihSemua('Gagal memilih semua pendaftar. Coba lagi.')
@@ -124,7 +113,6 @@ export function HalamanPendaftar() {
   }
 
   const tutupDetail = useCallback(() => setIdDetail(null), [])
-  // Setelah aksi massal tersimpan, pilihan dikosongkan (kunci tidak penting karena datanya kosong)
   const kosongkanPilihan = useCallback(() => setPilihan({ kunci: '', data: new Map() }), [])
 
   return (

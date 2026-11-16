@@ -1,9 +1,3 @@
-// Pendaftaran dari sisi Panitia Magang (semua mahasiswa): GET /api/v1/pendaftaran & /{id}, PATCH /api/v1/pendaftaran?id= (ubah status),
-// PUT /api/v1/pendaftaran/jadwal-seleksi-substansi & /plot-dpm (satu atau banyak pendaftar).
-// POST /api/v1/pendaftaran/ekspor (berkas Excel dari pendaftaran terpilih, dibuat backend).
-// Unduh berkas: services/berkas.ts. Tipe response & pemetaan tahap dipakai bersama dengan services/pendaftaran.ts.
-// Pagination, pencarian nama, dan filter periode/status/perusahaan dikerjakan backend (getHalamanPendaftar).
-
 import { JENIS_KELAMIN_DARI_KODE } from './dataDiri'
 import { isAxiosError } from 'axios'
 import { bacaErrorBlob, namaDariHeader, simpanBlob } from './berkas'
@@ -28,53 +22,33 @@ export type Pendaftar = {
   nama: string
   posisi: string
   perusahaan: string
-  /** id_periode backend */
   idPeriode: number
   status: StatusPendaftaran
-  /** ISO 8601 */
   diajukanPada: string
-  /** ISO 8601 */
   diubahPada: string
-  /** Jadwal seleksi substansi sudah diisi (hanya dari daftar; detail punya isinya di jadwalSeleksi) */
   adaJadwalSeleksi: boolean
-  /** Plotting DPM sudah diisi (hanya dari daftar; detail punya isinya di plottingDpm) */
   adaPlottingDpm: boolean
 }
 
-/**
- * Query GET /api/v1/pendaftaran, dengan nama yang sama persis seperti di backend (dan di URL halaman Pendaftar).
- * Yang undefined tidak dikirim, sehingga backend memakai bawaannya
- */
 export type PendaftarQuery = {
-  /** Halaman, mulai dari 1 (bawaan backend 1) */
   p: number
-  /** Baris per halaman (bawaan backend 25) */
   r: number
-  /** Bagian dari nama mahasiswa */
   s?: string
-  /** id_periode */
   periode?: number
-  /** id_status, lihat idStatus */
   status?: number
-  /** id_perusahaan */
   perusahaan?: number
-  /** id_posisi */
   posisi?: number
 }
 
 export type PendaftarHalaman = {
-  /** Baris pada halaman yang diminta */
   items: Pendaftar[]
-  /** Jumlah semua data (yang cocok dengan filter) dari semua halaman */
   total: number
 }
 
-/** Data pendaftar terpilih yang dibutuhkan aksi massal */
 export type PendaftarRingkas = Pick<Pendaftar, 'id' | 'status' | 'nama' | 'nim' | 'adaJadwalSeleksi' | 'adaPlottingDpm'>
 
 export type BerkasPendaftar = BerkasPendaftaran
 
-/** Detail lengkap satu pendaftar: data diri + berkas + riwayat status + data tahap */
 export type PendaftarDetail = Omit<Pendaftar, 'adaJadwalSeleksi' | 'adaPlottingDpm'> & {
   email: string | null
   jenisKelamin: string | null
@@ -83,17 +57,12 @@ export type PendaftarDetail = Omit<Pendaftar, 'adaJadwalSeleksi' | 'adaPlottingD
   semester: number | null
   nomorHp: string | null
   berkas: BerkasPendaftar[]
-  /** Urut dari yang paling lama */
   log: LogStatus[]
   jadwalSeleksi: JadwalSeleksiSubstansi | null
   suratKeterangan: SuratKeterangan | null
   plottingDpm: PlottingDpm | null
 }
 
-/**
- * Perubahan status yang boleh dilakukan Panitia Magang dari tiap status.
- * Diterima → Aktif dilakukan mahasiswa (konfirmasi penerimaan). Selesai/Tidak Lolos/Batal adalah status akhir.
- */
 export const TRANSISI_PANITIA_MAGANG: Record<StatusPendaftaran, StatusPendaftaran[]> = {
   'Menunggu Verifikasi': ['Lolos Seleksi Administrasi', 'Tidak Lolos'],
   'Lolos Seleksi Administrasi': ['Diterima', 'Tidak Lolos'],
@@ -104,13 +73,11 @@ export const TRANSISI_PANITIA_MAGANG: Record<StatusPendaftaran, StatusPendaftara
   'Batal/Mengundurkan Diri': [],
 }
 
-const ENDPOINT = '/api/v1/pendaftaran'
+const ENDPOINT = '/pendaftaran'
 
-/** Bagian yang sama untuk baris daftar & detail */
 function toPendaftarDasar(res: PendaftaranResponse): Omit<Pendaftar, 'adaJadwalSeleksi' | 'adaPlottingDpm'> {
   return {
     id: res.id_pendaftaran,
-    // Data diri wajib lengkap saat mendaftar, tapi tetap dijaga agar pencarian tidak error
     nim: res.mahasiswa.nim ?? '',
     nama: res.mahasiswa.nama ?? '',
     posisi: res.posisi,
@@ -142,21 +109,11 @@ function toPendaftarDetail(res: PendaftaranDetailResponse): PendaftarDetail {
   }
 }
 
-// ---- API ----
-
-/**
- * Satu halaman pendaftaran (Panitia Magang) yang cocok dengan pencarian & filter, dari yang paling baru.
- * Pencarian, filter, dan pagination semuanya dikerjakan backend
- */
 export async function getHalamanPendaftar(query: PendaftarQuery, signal?: AbortSignal): Promise<PendaftarHalaman> {
   const { data } = await api.get<HalamanPendaftaranResponse>(ENDPOINT, { params: query, signal })
   return { items: data.data.map(toPendaftar), total: data.total }
 }
 
-/**
- * Semua pendaftaran (dari semua halaman) yang cocok dengan pencarian & filter, untuk "Pilih semua".
- * Diminta dalam satu halaman dengan r = perkiraan total; bila ternyata bertambah, diminta lagi dengan total terbaru
- */
 export async function getSemuaPendaftar(
   filter: Omit<PendaftarQuery, 'p' | 'r'>,
   perkiraanTotal: number,
@@ -169,18 +126,12 @@ export async function getSemuaPendaftar(
   return data.data.map(toPendaftar)
 }
 
-/** Format berkas ekspor yang didukung backend, beserta labelnya */
 export const FORMAT_EKSPOR = [{ format: 'xlsx', label: 'Excel (.xlsx)' }] as const
 
 export type FormatEkspor = (typeof FORMAT_EKSPOR)[number]['format']
 
-/** Batas jumlah pendaftaran dalam satu ekspor, sama dengan backend */
 export const MAX_EKSPOR = 10_000
 
-/**
- * POST /api/v1/pendaftaran/ekspor: berkas dibuat backend dari pendaftaran terpilih, lalu diunduh.
- * Error 404 (ada yang tidak ditemukan) tanpa body; 422 membawa `message` (lihat pesanError)
- */
 export async function eksporPendaftar(idPendaftar: number[], format: FormatEkspor): Promise<void> {
   try {
     const response = await api.post<Blob>(
@@ -195,7 +146,6 @@ export async function eksporPendaftar(idPendaftar: number[], format: FormatEkspo
   }
 }
 
-/** null bila tidak ditemukan (404) atau id tidak valid */
 export async function getPendaftarDetail(id: number, signal?: AbortSignal): Promise<PendaftarDetail | null> {
   if (!Number.isSafeInteger(id) || id < 1) return null
   try {
@@ -207,34 +157,22 @@ export async function getPendaftarDetail(id: number, signal?: AbortSignal): Prom
   }
 }
 
-/**
- * PATCH /api/v1/pendaftaran?id={id}. Mengembalikan detail terbaru. Error 409 (perubahan tidak diizinkan)
- * & 422 membawa `message` yang bisa langsung ditampilkan (lihat pesanError)
- */
 export async function ubahStatusPendaftar(id: number, status: StatusPendaftaran, signal?: AbortSignal): Promise<PendaftarDetail> {
   const { data } = await api.patch<PendaftaranDetailResponse>(ENDPOINT, { status }, { params: { id }, signal })
   return toPendaftarDetail(data)
 }
 
-/** Batas panjang lokasi jadwal seleksi (karakter), sama dengan backend */
 export const LOKASI_JADWAL_MAX = 255
 
 export type JadwalSeleksiInput = {
   idPendaftar: number[]
-  /** YYYY-MM-DD, tidak boleh sebelum hari ini (WIB) */
   tanggal: string
-  /** HH:MM, 24 jam */
   jam: string
   lokasi: string
 }
 
-/** Tanggal hari ini menurut WIB (YYYY-MM-DD), patokan backend untuk "tanggal sudah lewat" */
 export const hariIniWib = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date())
 
-/**
- * Cek input jadwal sebelum dikirim, dengan aturan yang sama seperti backend. Pesannya juga disamakan
- * dengan pesan 422 backend. null bila valid
- */
 export function validasiJadwalSeleksi(input: JadwalSeleksiInput): string | null {
   if (input.idPendaftar.length === 0) return 'Pilih minimal satu pendaftaran.'
   const [tahun, bulan, hari] = input.tanggal.split('-').map(Number)
@@ -254,11 +192,6 @@ export function validasiJadwalSeleksi(input: JadwalSeleksiInput): string | null 
   return null
 }
 
-/**
- * PUT /api/v1/pendaftaran/jadwal-seleksi-substansi: satu jadwal untuk semua id (jadwal lama diganti).
- * Ditolak seluruhnya bila ada satu saja yang tidak ditemukan (404) atau tidak berstatus Lolos Seleksi
- * Administrasi (409). Error 409 & 422 membawa `message` yang bisa langsung ditampilkan (lihat pesanError)
- */
 export async function simpanJadwalSeleksi(input: JadwalSeleksiInput, signal?: AbortSignal): Promise<void> {
   await api.put(
     `${ENDPOINT}/jadwal-seleksi-substansi`,
@@ -267,17 +200,14 @@ export async function simpanJadwalSeleksi(input: JadwalSeleksiInput, signal?: Ab
   )
 }
 
-/** Batas panjang nama & kontak DPM (karakter), sama dengan backend */
 export const DPM_TEKS_MAX = 255
 
 export type PlottingDpmInput = {
   idPendaftar: number[]
   namaDpm: string
-  /** Bebas, mis. email atau nomor HP */
   kontakDpm: string
 }
 
-/** Cek input plotting sebelum dikirim, dengan aturan & pesan yang sama seperti 422 backend. null bila valid */
 export function validasiPlottingDpm(input: PlottingDpmInput): string | null {
   if (input.idPendaftar.length === 0) return 'Pilih minimal satu pendaftaran.'
   const panjangValid = (teks: string) => teks.trim().length >= 1 && teks.trim().length <= DPM_TEKS_MAX
@@ -286,11 +216,6 @@ export function validasiPlottingDpm(input: PlottingDpmInput): string | null {
   return null
 }
 
-/**
- * PUT /api/v1/pendaftaran/plot-dpm: satu DPM untuk semua id (plotting lama diganti).
- * Ditolak seluruhnya bila ada satu saja yang tidak ditemukan (404) atau tidak berstatus Aktif (409).
- * Error 409 & 422 membawa `message` yang bisa langsung ditampilkan (lihat pesanError)
- */
 export async function simpanPlottingDpm(input: PlottingDpmInput, signal?: AbortSignal): Promise<void> {
   await api.put(
     `${ENDPOINT}/plot-dpm`,

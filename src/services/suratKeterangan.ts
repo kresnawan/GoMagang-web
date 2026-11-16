@@ -1,17 +1,9 @@
-// Surat keterangan kepesertaan magang. Dibuat & ditandatangani (Ed25519) oleh backend saat pertama
-// diunduh dari pendaftaran berstatus Aktif; unduhan berikutnya mendapat file yang sama persis.
-// - Unduh: GET /api/v1/pendaftaran/{id}/surat-keterangan (pemilik & Panitia Magang)
-// - Verifikasi publik (tanpa login): GET /api/v1/surat-keterangan/verifikasi?kode= (kode dari QR)
-//   dan POST /api/v1/surat-keterangan/verifikasi (multipart `berkas`, dicocokkan byte per byte)
-
 import { isAxiosError } from 'axios'
 import { bacaErrorBlob, namaDariHeader, simpanBlob } from './berkas'
-import { api, authClient } from './http'
+import { api, publicApi } from './http'
 
-/** Isi surat yang tercatat & ditandatangani backend saat diterbitkan */
 export type SuratTerverifikasi = {
   nomorSurat: string
-  /** YYYY-MM-DD */
   tanggalSurat: string
   nama: string
   nim: string
@@ -20,9 +12,7 @@ export type SuratTerverifikasi = {
   perusahaan: string
   alamatPerusahaan: string
   program: string
-  /** YYYY-MM-DD */
   tanggalMulai: string
-  /** YYYY-MM-DD */
   tanggalSelesai: string
   namaPejabat: string
   nipPejabat: string
@@ -63,16 +53,11 @@ const toSurat = (res: SuratResponse): SuratTerverifikasi => ({
   jabatanPejabat: res.jabatan_pejabat,
 })
 
-const ENDPOINT_VERIFIKASI = '/api/v1/surat-keterangan/verifikasi'
+const ENDPOINT_VERIFIKASI = '/surat-keterangan/verifikasi'
 
-/**
- * Unduh (dan terbitkan, bila belum) surat keterangan. Error 409 (status bukan Aktif) membawa
- * `message` yang bisa langsung ditampilkan lewat pesanError; 503 berarti kunci tanda tangan
- * belum dipasang di server
- */
 export async function unduhSuratKeterangan(idPendaftaran: string): Promise<void> {
   try {
-    const response = await api.get<Blob>(`/api/v1/pendaftaran/${idPendaftaran}/surat-keterangan`, {
+    const response = await api.get<Blob>(`/pendaftaran/${idPendaftaran}/surat-keterangan`, {
       responseType: 'blob',
     })
     simpanBlob(response.data, namaDariHeader(response) ?? 'surat-keterangan-magang.pdf')
@@ -82,13 +67,9 @@ export async function unduhSuratKeterangan(idPendaftaran: string): Promise<void>
   }
 }
 
-// Verifikasi memakai authClient (tanpa interceptor refresh/redirect): halamannya publik, jadi
-// pengunjung yang tidak login tidak boleh dilempar ke halaman login.
-
-/** null bila kode tidak valid, tidak dikenal, atau tanda tangannya tidak cocok (404) */
 export async function verifikasiKode(kode: string, signal?: AbortSignal): Promise<SuratTerverifikasi | null> {
   try {
-    const { data } = await authClient.get<SuratResponse>(ENDPOINT_VERIFIKASI, { params: { kode }, signal })
+    const { data } = await publicApi.get<SuratResponse>(ENDPOINT_VERIFIKASI, { params: { kode }, signal })
     return toSurat(data)
   } catch (err) {
     if (isAxiosError(err) && err.response?.status === 404) return null
@@ -96,12 +77,11 @@ export async function verifikasiKode(kode: string, signal?: AbortSignal): Promis
   }
 }
 
-/** null bila berkas bukan surat asli yang diterbitkan portal ini (404) */
 export async function verifikasiBerkas(berkas: File, signal?: AbortSignal): Promise<SuratTerverifikasi | null> {
   const body = new FormData()
   body.set('berkas', berkas)
   try {
-    const { data } = await authClient.post<SuratResponse>(ENDPOINT_VERIFIKASI, body, { signal })
+    const { data } = await publicApi.post<SuratResponse>(ENDPOINT_VERIFIKASI, body, { signal })
     return toSurat(data)
   } catch (err) {
     if (isAxiosError(err) && err.response?.status === 404) return null

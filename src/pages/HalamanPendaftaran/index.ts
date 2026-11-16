@@ -16,7 +16,6 @@ export { wajibDataDiriLengkap } from './guard'
 
 type PageRoute = Omit<RouteObject, 'path' | 'index' | 'children'>
 
-/** /pendaftaran — daftar lowongan */
 export const daftarLowonganRoute = {
   Component: HalamanDaftarLowongan,
   HydrateFallback: DaftarLowonganSkeleton,
@@ -24,7 +23,6 @@ export const daftarLowonganRoute = {
   loader: daftarLoader,
 } satisfies PageRoute
 
-/** /pendaftaran/:lowonganId — form pendaftaran untuk lowongan terpilih */
 export const formPendaftaranRoute = {
   Component: HalamanFormPendaftaran,
   HydrateFallback: FormPendaftaranSkeleton,

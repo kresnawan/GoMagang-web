@@ -16,7 +16,6 @@ export function HalamanTemplatSpDpa() {
   const isSaving = fetcher.state !== 'idle'
   const result = fetcher.state === 'idle' ? fetcher.data : undefined
 
-  // Tersimpan: kosongkan isian (tautan baru tampil di atas lewat revalidasi loader)
   useEffect(() => {
     if (result?.ok) formRef.current?.reset()
   }, [result])
@@ -31,7 +30,6 @@ export function HalamanTemplatSpDpa() {
       <PageHeading title={JUDUL} subtitle={SUBJUDUL} />
 
       <section aria-labelledby="judul-tautan-berlaku" className="max-w-3xl">
-        {/* Ukuran sama dengan label form di bawahnya; h2 global berukuran text-h2 */}
         <h2 id="judul-tautan-berlaku" className="mb-1.5 text-base font-bold text-brand-700">
           Tautan yang berlaku
         </h2>

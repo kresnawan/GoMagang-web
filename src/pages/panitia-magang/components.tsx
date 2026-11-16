@@ -3,7 +3,6 @@ import { cn } from '../../component/cn'
 
 export { GagalMemuat, PageHeading } from '../../component'
 
-/** Tombol "+ Tambah" di kanan atas kotak konten */
 export function TambahButton({ className, children = 'Tambah', ...props }: ButtonProps) {
   return (
     <Button type="button" className={cn('px-5', className)} {...props}>

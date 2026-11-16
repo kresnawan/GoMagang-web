@@ -1,6 +1,5 @@
 import { useRevalidator } from 'react-router'
 
-/** Pesan gagal memuat + tombol coba lagi, untuk ErrorBoundary halaman */
 export function GagalMemuat({ pesan }: { pesan: string }) {
   const revalidator = useRevalidator()
 

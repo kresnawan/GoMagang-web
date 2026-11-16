@@ -7,21 +7,18 @@ import type { action } from './route'
 const th = 'border-b border-brand-300 px-3 py-2.5 text-left font-bold text-brand-700'
 const td = 'border-b border-brand-300 px-3 py-2.5 align-top'
 
-/** Tabel MK yang sudah dipilih + hapus per baris (dengan konfirmasi) */
 export function TabelMk({ penyetaraan }: { penyetaraan: PenyetaraanMk[] }) {
   const fetcher = useFetcher<typeof action>()
   const [hapus, setHapus] = useState<PenyetaraanMk | null>(null)
   const isDeleting = fetcher.state !== 'idle'
   const error = fetcher.state === 'idle' && fetcher.data && !fetcher.data.ok ? fetcher.data.error : null
   const totalSks = penyetaraan.reduce((total, item) => total + item.mataKuliah.sks, 0)
-  // Baris yang sedang dihapus disembunyikan lebih dulu (optimistic)
   const idDihapus = isDeleting ? fetcher.formData?.get('idPenyetaraan') : null
   const baris = penyetaraan.filter((item) => item.id !== idDihapus)
 
   return (
     <>
       <div className="overflow-x-auto rounded-sm border border-brand-300">
-        {/* Di mobile kolom No & MK Asal disembunyikan; MK asal tampil di bawah MK konversi */}
         <table className="w-full border-collapse">
           <thead className="bg-brand-100">
             <tr>

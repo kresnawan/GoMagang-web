@@ -3,9 +3,7 @@ import { cn } from './cn'
 
 export type FormFieldProps = {
   label: string
-  /** id input yang dihubungkan ke label. Abaikan jika `group` */
   htmlFor?: string
-  /** Render sebagai <fieldset>/<legend>, untuk kumpulan radio/checkbox */
   group?: boolean
   className?: string
   children: ReactNode

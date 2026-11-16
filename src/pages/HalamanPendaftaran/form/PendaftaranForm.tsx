@@ -10,7 +10,6 @@ import type { action } from './route'
 
 export type PendaftaranFormProps = {
   lowongan: Posisi
-  /** Templat surat pernyataan DPA; null bila belum diatur Panitia Magang atau gagal dimuat */
   templatSpDpa: TemplatSpDpa | null
 }
 
@@ -18,7 +17,6 @@ export function PendaftaranForm({ lowongan, templatSpDpa }: PendaftaranFormProps
   const fetcher = useFetcher<typeof action>()
   const navigate = useNavigate()
   const location = useLocation()
-  // Data yang sudah lolos validasi dan menunggu konfirmasi di dialog
   const [pending, setPending] = useState<FormData | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -26,8 +24,6 @@ export function PendaftaranForm({ lowongan, templatSpDpa }: PendaftaranFormProps
   const isSending = fetcher.state !== 'idle'
   const actionError = fetcher.state === 'idle' && fetcher.data && !fetcher.data.ok ? fetcher.data.error : null
 
-  // Berhasil: kembali ke daftar lowongan dengan pesan sukses.
-  // replace agar tombol back browser tidak kembali ke form yang sudah terkirim.
   useEffect(() => {
     if (fetcher.state !== 'idle' || !fetcher.data?.ok) return
     navigate(backTo, {
@@ -42,7 +38,6 @@ export function PendaftaranForm({ lowongan, templatSpDpa }: PendaftaranFormProps
     const validationError = validatePendaftaranForm(formData)
     setError(validationError)
     if (!validationError) {
-      // Lolos validasi: tampilkan dialog konfirmasi; dikirim ke backend setelah dikonfirmasi
       fetcher.reset()
       setPending(formData)
     }

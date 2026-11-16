@@ -18,7 +18,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ])
   const aktif = semua.filter((item) => item.status === 'Aktif')
 
-  // Pilihan disimpan di URL; jika hanya ada 1 pendaftaran Aktif, langsung terpilih
   const idDipilih = new URL(request.url).searchParams.get(PENDAFTARAN_PARAM)
   const terpilih = aktif.find((item) => item.id === idDipilih) ?? (aktif.length === 1 ? aktif[0] : null)
   const penyetaraan = terpilih ? await getPenyetaraanMk(terpilih.id, request.signal) : []

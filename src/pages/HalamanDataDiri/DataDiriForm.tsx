@@ -12,22 +12,17 @@ import {
 import type { action } from './route'
 
 export type DataDiriFormProps = {
-  /** Data awal dari backend */
   data: DataDiri
 }
 
 export function DataDiriForm({ data }: DataDiriFormProps) {
   const fetcher = useFetcher<typeof action>()
-  // null = belum ada yang diketik sejak halaman dimuat
   const [values, setValues] = useState<DataDiriFormValues | null>(null)
 
-  // Dibandingkan dengan `data` terbaru, jadi setelah tersimpan (loader revalidate) tombol kembali disabled
   const adaPerubahan = values !== null && Object.keys(perubahanDataDiri(data, values)).length > 0
   const isSaving = fetcher.state !== 'idle'
-  // Pesan sukses disembunyikan begitu ada perubahan baru; pesan error tetap tampil
   const pesan = !isSaving && fetcher.data && (fetcher.data.ok ? !adaPerubahan && fetcher.data.message : fetcher.data.error)
 
-  // Kolom yang sudah tersimpan tidak bisa dikosongkan (backend menolak null), kolom kosong boleh tetap kosong
   const wajib = (key: keyof DataDiriFormValues) => data[key] !== null
 
   return (

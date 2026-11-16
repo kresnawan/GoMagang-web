@@ -4,7 +4,6 @@ import { TextInput } from '../../../component'
 
 const SEARCH_DELAY = 300
 
-/** Pencarian nama posisi. Nilainya disimpan di URL (?q=) lalu dibaca oleh loader */
 export function LowonganFilter() {
   const [searchParams, setSearchParams] = useSearchParams()
   const timerRef = useRef<number>(undefined)
@@ -31,7 +30,6 @@ export function LowonganFilter() {
         aria-label="Cari nama posisi"
         placeholder="Cari nama posisi..."
         defaultValue={searchParams.get('q') ?? ''}
-        // Ditunda sebentar agar tidak memuat ulang di setiap huruf
         onChange={(event) => {
           const value = event.currentTarget.value
           window.clearTimeout(timerRef.current)

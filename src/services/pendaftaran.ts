@@ -1,8 +1,3 @@
-// Pendaftaran dari sisi mahasiswa: GET /api/v1/pendaftaran & /{id} (hanya miliknya), POST /api/v1/pendaftaran,
-// PATCH /api/v1/pendaftaran/accept (konfirmasi penerimaan).
-// Bentuk response sama dengan sisi Panitia Magang (services/pendaftar.ts), jadi tipe & pemetaannya dipakai bersama.
-// Surat keterangan dibuat & diunduh lewat services/suratKeterangan.ts.
-
 import { isAxiosError } from 'axios'
 import { api } from './http'
 import { gambarInisial } from './lowongan'
@@ -18,29 +13,16 @@ export const STATUS_PENDAFTARAN = [
 ] as const
 export type StatusPendaftaran = (typeof STATUS_PENDAFTARAN)[number]
 
-/**
- * id_status di backend (dipakai filter `status` di GET /api/v1/pendaftaran). Backend belum punya endpoint daftar
- * status, jadi diturunkan dari urutan STATUS_PENDAFTARAN yang sama persis dengan urutan seed migration backend
- * (migrations/20261104000002_seed_status_pendaftaran.sql): Menunggu Verifikasi = 1 … Batal/Mengundurkan Diri = 7
- */
 export const idStatus = (status: StatusPendaftaran) => STATUS_PENDAFTARAN.indexOf(status) + 1
 
-/** Status akhir: pendaftaran sudah tidak berjalan */
 const STATUS_SELESAI: readonly StatusPendaftaran[] = ['Selesai', 'Tidak Lolos', 'Batal/Mengundurkan Diri']
 
-/**
- * Jumlah maksimal pendaftaran per mahasiswa dalam satu periode. Semua status dihitung, termasuk yang
- * batal, tidak lolos, atau selesai (sama dengan backend)
- */
 export const MAX_PENDAFTARAN_PER_PERIODE = 2
 
 export const isPendaftaranBerjalan = (pendaftaran: Pendaftaran) => !STATUS_SELESAI.includes(pendaftaran.status)
 
-/** Ringkasan pendaftaran mahasiswa, untuk menentukan posisi mana yang masih bisa didaftar */
 export type RiwayatPendaftaran = {
-  /** id posisi yang pendaftarannya belum berakhir. Setelah Selesai/Tidak Lolos/Batal, posisi itu boleh didaftar lagi */
   posisiBerjalan: Set<number>
-  /** id_periode → jumlah pendaftaran di periode itu, semua status */
   jumlahPerPeriode: Map<number, number>
 }
 
@@ -63,7 +45,6 @@ export const jumlahDiPeriode = (riwayat: RiwayatPendaftaran, idPeriode: number) 
 export const batasPeriodeTercapai = (riwayat: RiwayatPendaftaran, idPeriode: number) =>
   jumlahDiPeriode(riwayat, idPeriode) >= MAX_PENDAFTARAN_PER_PERIODE
 
-/** Alasan mahasiswa tidak bisa mendaftar di posisi ini (sama dengan aturan backend); null bila bisa */
 export function alasanTidakBisaDaftar(
   riwayat: RiwayatPendaftaran,
   posisi: { id: number; idPeriode: number },
@@ -75,60 +56,44 @@ export function alasanTidakBisaDaftar(
   return null
 }
 
-/** Ringkasan pendaftaran (untuk Dasbor & Konversi MK) */
 export type Pendaftaran = {
-  /** id_pendaftaran sebagai string (dipakai di URL) */
   id: string
   idPosisi: number
-  /** id_periode dari posisinya */
   idPeriode: number
   posisi: string
   perusahaan: string
   gambar: string
   status: StatusPendaftaran
-  /** ISO 8601 */
   diajukanPada: string
-  /** ISO 8601 */
   diubahPada: string
 }
 
-/** Tabel berkas_pendaftaran */
 export type BerkasPendaftaran = {
-  /** id_berkas, untuk unduh (services/berkas.ts) */
   id: number
-  /** mis. "Surat Pernyataan DPA" atau "CV" */
   jenis: string
   nama: string
-  /** byte */
   ukuran: number
 }
 
-/** Tabel log_status */
 export type LogStatus = {
   id: string
   statusLama: StatusPendaftaran | null
   statusBaru: StatusPendaftaran
-  /** ISO 8601 */
   dibuatPada: string
 }
 
-/** Tabel jadwal_seleksi_substansi */
 export type JadwalSeleksiSubstansi = {
-  /** YYYY-MM-DD */
   tanggal: string
-  /** HH:mm */
   jam: string
   lokasi: string
 }
 
-/** Tabel surat_keterangan: ada setelah surat pertama kali diunduh (diterbitkan). Unduh lewat services/suratKeterangan.ts */
 export type SuratKeterangan = {
   nama: string
   ukuran: number
   nomorSurat: string
 }
 
-/** Tabel plotting_dpm */
 export type PlottingDpm = {
   nama: string
   kontak: string
@@ -136,7 +101,6 @@ export type PlottingDpm = {
 
 export type PendaftaranDetail = Pendaftaran & {
   berkas: BerkasPendaftaran[]
-  /** Urut dari yang paling lama */
   log: LogStatus[]
   jadwalSeleksi: JadwalSeleksiSubstansi | null
   suratKeterangan: SuratKeterangan | null
@@ -147,14 +111,10 @@ export type PendaftaranInput = {
   idPosisi: number
   suratDpa: File
   cv: File
-  /** Portfolio & berkas tambahan (opsional, maks. MAX_BERKAS_TAMBAHAN) */
   berkasTambahan: File[]
 }
 
-/** Batas jumlah portfolio & berkas tambahan per pendaftaran, sama dengan backend */
 export const MAX_BERKAS_TAMBAHAN = 5
-
-// ---- Bentuk response backend (dipakai juga oleh services/pendaftar.ts) ----
 
 export type PendaftaranResponse = {
   id_pendaftaran: number
@@ -168,13 +128,11 @@ export type PendaftaranResponse = {
   mahasiswa: { id_pengguna: number; nim: string | null; nama: string | null }
 }
 
-/** Satu baris di GET /api/v1/pendaftaran: ada penanda data tahap yang hanya ada di daftar */
 export type PendaftaranListItemResponse = PendaftaranResponse & {
   ada_jadwal_seleksi: boolean
   ada_plotting_dpm: boolean
 }
 
-/** Bentuk response GET /api/v1/pendaftaran (dengan atau tanpa query p & r) */
 export type HalamanPendaftaranResponse = {
   data: PendaftaranListItemResponse[]
   page: number
@@ -199,7 +157,6 @@ export type PendaftaranDetailResponse = Omit<PendaftaranResponse, 'mahasiswa'> &
   plotting_dpm: { nama_dpm: string; kontak_dpm: string } | null
 }
 
-/** Bagian detail yang sama untuk mahasiswa & Panitia Magang */
 export function toTahapPendaftaran(res: PendaftaranDetailResponse) {
   return {
     berkas: res.berkas.map((b) => ({ id: b.id_berkas, jenis: b.jenis_berkas, nama: b.nama_berkas, ukuran: b.ukuran_berkas })),
@@ -214,7 +171,7 @@ export function toTahapPendaftaran(res: PendaftaranDetailResponse) {
   } satisfies Pick<PendaftaranDetail, 'berkas' | 'log' | 'jadwalSeleksi' | 'suratKeterangan' | 'plottingDpm'>
 }
 
-const ENDPOINT = '/api/v1/pendaftaran'
+const ENDPOINT = '/pendaftaran'
 
 const toPendaftaran = (res: PendaftaranResponse): Pendaftaran => ({
   id: String(res.id_pendaftaran),
@@ -222,28 +179,21 @@ const toPendaftaran = (res: PendaftaranResponse): Pendaftaran => ({
   idPeriode: res.id_periode,
   posisi: res.posisi,
   perusahaan: res.perusahaan.nama_perusahaan,
-  // Seed id_perusahaan: warnanya sama dengan di daftar lowongan
   gambar: gambarInisial(res.perusahaan.nama_perusahaan, res.perusahaan.id_perusahaan),
   status: res.status,
   diajukanPada: res.created_at,
   diubahPada: res.updated_at,
 })
 
-// ---- API ----
-
-/** Baris per permintaan pertama; pendaftaran per mahasiswa biasanya jauh lebih sedikit dari ini */
 const ROWS_SEMUA = 100
 
-/** Pendaftaran milik mahasiswa yang login, dari yang paling baru (semua status, semua halaman) */
 export async function getPendaftaranList(signal?: AbortSignal): Promise<Pendaftaran[]> {
-  // Tanpa r backend hanya mengirim 25 baris. Bila total melebihi ROWS_SEMUA, minta lagi dengan r = total
   const ambil = (r: number) => api.get<HalamanPendaftaranResponse>(ENDPOINT, { params: { r }, signal })
   let { data } = await ambil(ROWS_SEMUA)
   if (data.total > data.data.length) ({ data } = await ambil(data.total))
   return data.data.map(toPendaftaran)
 }
 
-/** null bila id tidak valid, tidak ditemukan (404), atau milik mahasiswa lain (403) */
 export async function getPendaftaran(id: string, signal?: AbortSignal): Promise<PendaftaranDetail | null> {
   if (!/^[1-9][0-9]*$/.test(id)) return null
   try {
@@ -255,11 +205,6 @@ export async function getPendaftaran(id: string, signal?: AbortSignal): Promise<
   }
 }
 
-/**
- * POST /api/v1/pendaftaran (multipart). Content-Type dibiarkan diisi otomatis agar boundary-nya benar.
- * Error 409 (periode tutup, sudah Aktif, sudah mendaftar, batas 2 pendaftaran) & 422 membawa `message`
- * yang bisa langsung ditampilkan (lihat pesanError)
- */
 export async function kirimPendaftaran(input: PendaftaranInput, signal?: AbortSignal): Promise<{ id: number }> {
   const body = new FormData()
   body.set('id_posisi', String(input.idPosisi))
@@ -270,11 +215,6 @@ export async function kirimPendaftaran(input: PendaftaranInput, signal?: AbortSi
   return { id: data.id_pendaftaran }
 }
 
-/**
- * PATCH /api/v1/pendaftaran/accept?id={id}: Diterima → Aktif, dan pendaftaran lain yang masih berjalan
- * otomatis menjadi Batal/Mengundurkan Diri. Error 409 (status bukan Diterima, sudah punya pendaftaran Aktif)
- * membawa `message` yang bisa langsung ditampilkan (lihat pesanError)
- */
 export async function konfirmasiPenerimaan(id: number, signal?: AbortSignal): Promise<PendaftaranDetail> {
   const { data } = await api.patch<PendaftaranDetailResponse>(`${ENDPOINT}/accept`, undefined, { params: { id }, signal })
   return { ...toPendaftaran(data), ...toTahapPendaftaran(data) }

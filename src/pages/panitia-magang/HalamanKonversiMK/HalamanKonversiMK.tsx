@@ -11,7 +11,6 @@ import { INTENT, type action, type loader } from './route'
 const JUDUL = 'Konversi Mata Kuliah'
 const SUBJUDUL = 'Daftar mata kuliah yang dapat dipilih mahasiswa untuk dikonversi dari kegiatan magang.'
 
-/** Pesan error dari action, dipakai semua dialog */
 function PesanError({ result }: { result: { ok: false; error: string } | { ok: true } | undefined }) {
   if (!result || result.ok) return null
   return (
@@ -21,7 +20,6 @@ function PesanError({ result }: { result: { ok: false; error: string } | { ok: t
   )
 }
 
-/** Dipasang hanya saat dibuka, sehingga form selalu mulai kosong */
 function TambahMkDialog({ onClose }: { onClose: () => void }) {
   const fetcher = useFetcher<typeof action>()
   const isSaving = fetcher.state !== 'idle'
@@ -69,7 +67,6 @@ function TambahMkDialog({ onClose }: { onClose: () => void }) {
   )
 }
 
-/** Konfirmasi menghapus (soft delete) MK. Dipasang hanya saat dibuka */
 function HapusMkDialog({ mataKuliah, onClose }: { mataKuliah: MataKuliahKonversi; onClose: () => void }) {
   const fetcher = useFetcher<typeof action>()
   const isSaving = fetcher.state !== 'idle'
@@ -148,7 +145,6 @@ function TabelAktif({ mataKuliah, onHapus }: { mataKuliah: MataKuliahKonversi[];
   )
 }
 
-/** MK yang sudah dihapus, hanya tampil setelah teks pembukanya diklik */
 function BagianDihapus({ mataKuliah }: { mataKuliah: MataKuliahKonversi[] }) {
   const [terbuka, setTerbuka] = useState(false)
 

@@ -8,10 +8,6 @@ export type HasilBerkas =
   | { status: 'tidak-ditemukan' }
   | { status: 'gagal'; pesan: string }
 
-/**
- * Dibuka dari link di file Excel hasil ekspor Panitia Magang: /berkas/{token}. Link yang sudah lewat masanya tidak
- * perlu dikirim ke backend; sisanya (diubah, dihapus, dll.) dijawab 404 oleh backend
- */
 export async function loader({ request, params }: LoaderFunctionArgs): Promise<HasilBerkas> {
   const token = params.token ?? ''
   const berlakuSampai = kedaluwarsaToken(token)

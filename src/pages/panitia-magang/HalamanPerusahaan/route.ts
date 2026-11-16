@@ -9,17 +9,14 @@ import {
   ubahNamaPerusahaan,
 } from '../../../services/perusahaan'
 
-/** Semua perusahaan, termasuk yang disembunyikan (ditampilkan di bagian bawah halaman) */
 export async function loader({ request }: LoaderFunctionArgs) {
   return getPerusahaan(request.signal, true)
 }
 
-/** Jenis operasi yang dikirim lewat field `intent` */
 export const INTENT = { tambah: 'tambah', ubahNama: 'ubah-nama', sembunyikan: 'sembunyikan' } as const
 
 const gagal = (error: string, status: number) => data({ ok: false as const, error }, { status })
 
-/** Nama dari form, atau pesan kesalahannya */
 function bacaNama(formData: FormData): { nama: string } | { error: string } {
   const nama = String(formData.get('namaPerusahaan') ?? '').trim()
   if (!nama) return { error: 'Nama perusahaan wajib diisi.' }

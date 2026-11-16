@@ -6,7 +6,6 @@ import { EksporPendaftar } from './EksporPendaftar'
 import { JadwalSeleksiDialog } from './JadwalSeleksiDialog'
 import { PlottingDpmDialog } from './PlottingDpmDialog'
 
-/** Aturan tiap aksi massal: status yang wajib dimiliki semua terpilih, dan penanda data yang sudah ada */
 const AKSI = {
   jadwal: {
     label: 'Tambah Jadwal Seleksi Substansi',
@@ -32,10 +31,6 @@ const AKSI = {
 
 type Aksi = keyof typeof AKSI
 
-/**
- * Aksi massal hanya untuk pendaftar dengan status yang sesuai dan belum punya datanya (data yang sudah ada
- * diubah satu per satu lewat dialog Detail). null bila boleh
- */
 function alasanNonaktif(aksi: Aksi, terpilih: PendaftarRingkas[]): string | null {
   const aturan = AKSI[aksi]
   if (terpilih.length === 0) return 'Pilih pendaftar terlebih dahulu.'
@@ -48,17 +43,14 @@ function alasanNonaktif(aksi: Aksi, terpilih: PendaftarRingkas[]): string | null
 
 type AksiPendaftarProps = {
   terpilih: PendaftarRingkas[]
-  /** Dipanggil setelah aksi massal tersimpan (mis. untuk mengosongkan pilihan) */
   onSelesai: () => void
 }
 
-/** Ekspor & tombol aksi massal untuk pendaftar terpilih; masing-masing aktif hanya bila syaratnya terpenuhi */
 export function AksiPendaftar({ terpilih, onSelesai }: AksiPendaftarProps) {
   const [aktif, setAktif] = useState<Aksi | null>(null)
   const alasan = { jadwal: alasanNonaktif('jadwal', terpilih), plotting: alasanNonaktif('plotting', terpilih) }
   const tutup = () => setAktif(null)
 
-  // Keterangan hanya ditampilkan bila ada yang dipilih dan tidak ada aksi yang bisa dipakai
   const keterangan =
     terpilih.length === 0
       ? 'Pilih pendaftar terlebih dahulu.'

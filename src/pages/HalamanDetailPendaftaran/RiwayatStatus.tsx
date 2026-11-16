@@ -5,7 +5,6 @@ import { formatTanggalJadwal, formatWaktu } from './format'
 import { KonfirmasiPenerimaan } from './KonfirmasiPenerimaan'
 import { UnduhSuratKeterangan } from './UnduhSuratKeterangan'
 
-/** Section kanan: riwayat status. Urut bawah ke atas — paling lama di bawah, terbaru di atas */
 export function RiwayatStatus({ pendaftaran }: { pendaftaran: PendaftaranDetail }) {
   const log = [...pendaftaran.log].reverse()
 
@@ -36,9 +35,7 @@ type LogItemProps = {
 function LogItem({ log, pendaftaran, isLatest, isLast }: LogItemProps) {
   return (
     <li className={cn('relative pl-8', !isLast && 'pb-7')}>
-      {/* Garis penghubung ke titik di bawahnya */}
       {!isLast && <span aria-hidden className="absolute -bottom-9 left-1.75 top-9 w-0.5 bg-brand-300" />}
-      {/* Titik bergaya RadioButton guideline: terisi untuk status terbaru */}
       <span
         aria-hidden
         className={cn(
@@ -58,11 +55,6 @@ function LogItem({ log, pendaftaran, isLatest, isLast }: LogItemProps) {
   )
 }
 
-/**
- * Info tambahan di titik log tertentu. Jadwal seleksi dan plotting DPM selalu ditampilkan (atau pesan
- * "belum ditambahkan"), termasuk setelah pendaftaran lanjut ke tahap berikutnya. Surat keterangan berupa
- * tombol unduh (lihat UnduhSuratKeterangan)
- */
 function LogInfo({ log, pendaftaran }: { log: LogStatus; pendaftaran: PendaftaranDetail }) {
   if (log.statusBaru === 'Lolos Seleksi Administrasi') {
     const jadwal = pendaftaran.jadwalSeleksi

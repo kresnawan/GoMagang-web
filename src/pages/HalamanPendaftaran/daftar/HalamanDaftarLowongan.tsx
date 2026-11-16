@@ -16,7 +16,6 @@ function PageHeading() {
   )
 }
 
-/** Pesan sukses setelah kembali dari form pendaftaran */
 function SuksesBanner() {
   const location = useLocation()
   const [dismissedKey, setDismissedKey] = useState<string>()
@@ -40,7 +39,6 @@ function SuksesBanner() {
   )
 }
 
-/** Ditampilkan menggantikan pencarian & daftar bila tidak ada periode yang sedang berlangsung */
 function PeriodeBelumDibuka() {
   return (
     <div role="status" className="rounded-sm border border-dashed border-brand-300 px-4 py-12 text-center">
@@ -55,7 +53,6 @@ function PeriodeBelumDibuka() {
 export function HalamanDaftarLowongan() {
   const { filter, periodeBerjalan, posisi, riwayat } = useLoaderData<typeof loader>()
   const navigation = useNavigation()
-  // Redupkan list selama filter baru sedang dimuat
   const isFiltering = navigation.state === 'loading' && navigation.location.pathname === DAFTAR_LOWONGAN_PATH
 
   if (!periodeBerjalan) {

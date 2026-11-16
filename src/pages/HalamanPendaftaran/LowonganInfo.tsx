@@ -13,7 +13,6 @@ export function LowonganImage({ lowongan, className }: { lowongan: GambarLowonga
   )
 }
 
-/** Nama posisi & perusahaan lowongan (halaman form pendaftaran) */
 export function LowonganInfo({ lowongan, className }: { lowongan: Pick<Posisi, 'posisi' | 'perusahaan'>; className?: string }) {
   return (
     <div className={cn('min-w-0', className)}>

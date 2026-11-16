@@ -4,7 +4,6 @@ import { Button } from '../../component'
 import { simpanBlob, type BerkasPublik } from '../../services/berkas'
 import type { loader } from './route'
 
-// Waktu ditampilkan dalam WIB, apa pun zona waktu pengunjung
 const waktuFormat = new Intl.DateTimeFormat('id-ID', {
   dateStyle: 'long',
   timeStyle: 'short',
@@ -32,7 +31,6 @@ function Pesan({ judul, children }: { judul: string; children: ReactNode }) {
   )
 }
 
-/** Pratinjau PDF lewat URL objek sementara, yang dilepas lagi saat iframe dilepas */
 function Pratinjau({ berkas }: { berkas: BerkasPublik }) {
   const pasang = useCallback(
     (iframe: HTMLIFrameElement | null) => {
@@ -53,7 +51,6 @@ function Pratinjau({ berkas }: { berkas: BerkasPublik }) {
   )
 }
 
-/** Halaman publik (tanpa login) tujuan link berkas di file Excel hasil ekspor Panitia Magang */
 export function HalamanBerkasPublik() {
   const hasil = useLoaderData<typeof loader>()
 

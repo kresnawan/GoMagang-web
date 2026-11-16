@@ -14,7 +14,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   let awal
   try {
-    // Bandingkan dengan data terbaru di server, lalu kirim hanya kolom yang berubah
     awal = await getDataDiri(request.signal)
   } catch (err) {
     return gagal(pesanError(err, 'Gagal memuat data terbaru. Coba lagi.'), 500)

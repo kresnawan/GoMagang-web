@@ -19,7 +19,6 @@ const TONE_CLASS: Record<Tone, { text: string; dot: string; badge: string }> = {
   neutral: { text: 'text-brand-700', dot: 'bg-brand-700', badge: 'bg-brand-100 text-brand-700 ring-brand-300' },
 }
 
-/** Class warna untuk sebuah status (teks, isi titik, dan badge) */
 export function statusToneClass(status: StatusPendaftaran) {
   return TONE_CLASS[STATUS_TONE[status]]
 }

@@ -17,7 +17,6 @@ export function HalamanDataDiri() {
   )
 }
 
-/** Tampil saat data pertama kali dimuat */
 export function DataDiriSkeleton() {
   const field = <div className="h-16 rounded-md bg-brand-100" />
 

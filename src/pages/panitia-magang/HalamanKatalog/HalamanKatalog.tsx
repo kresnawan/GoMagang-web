@@ -12,7 +12,6 @@ import { SembunyikanPosisiDialog, UbahPosisiDialog } from './UbahPosisiDialog'
 
 type Operasi = { intent: typeof INTENT.ubah | typeof INTENT.sembunyikan; posisi: Posisi }
 
-/** Kartu posisi. Tanpa `onPilih` (posisi yang disembunyikan) kartu tampil redup tanpa tombol aksi */
 function PosisiCard({ posisi, onPilih }: { posisi: Posisi; onPilih?: (operasi: Operasi) => void }) {
   const disembunyikan = posisi.disembunyikanPada !== null
 
@@ -35,7 +34,6 @@ function PosisiCard({ posisi, onPilih }: { posisi: Posisi; onPilih?: (operasi: O
           <p className="mt-1 text-sm">Disembunyikan pada {formatWaktu(posisi.disembunyikanPada)} WIB</p>
         )}
       </div>
-      {/* Kuota di tengah, di antara teks dan tombol aksi */}
       <p className="shrink-0 text-sm text-brand-500 sm:w-28 sm:text-center">
         <span className="sm:block">Kuota</span>{' '}
         <span className={cn('font-bold sm:block sm:text-h6', disembunyikan ? 'text-brand-500' : 'text-brand-900')}>{posisi.kuota}</span>{' '}
@@ -60,7 +58,6 @@ function PosisiCard({ posisi, onPilih }: { posisi: Posisi; onPilih?: (operasi: O
   )
 }
 
-/** Posisi yang disembunyikan di periode ini, hanya tampil setelah teks pembukanya diklik */
 function BagianDisembunyikan({ posisi }: { posisi: Posisi[] }) {
   const [terbuka, setTerbuka] = useState(false)
 
@@ -109,7 +106,6 @@ export function HalamanKatalog() {
     [setSearchParams],
   )
   const closeDialog = useCallback(() => setDialogOpen(false), [])
-  // Setelah tersimpan: tutup dialog & tampilkan periode tempat posisi baru ditambahkan
   const handleSuccess = useCallback(
     (idPeriode: number) => {
       setDialogOpen(false)
@@ -124,7 +120,6 @@ export function HalamanKatalog() {
       <PageHeading title="Katalog Posisi Magang" subtitle="Kelola posisi magang yang dibuka di setiap periode." />
 
       <section aria-label="Daftar posisi magang">
-        {/* Dropdown periode di kiri, tombol Tambah di kanan; sejajar di bagian bawah */}
         <div className="flex flex-wrap items-end justify-between gap-3">
           <FormField label="Periode" htmlFor="periode" className="w-full max-w-md sm:w-auto sm:flex-1">
             <DropDown
@@ -141,7 +136,6 @@ export function HalamanKatalog() {
               ))}
             </DropDown>
           </FormField>
-          {/* Posisi wajib punya periode; tanpa periode tombol dinonaktifkan */}
           <TambahButton onClick={() => setDialogOpen(true)} disabled={periode.length === 0} />
         </div>
 

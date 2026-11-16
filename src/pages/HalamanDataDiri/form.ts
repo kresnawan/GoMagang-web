@@ -10,10 +10,8 @@ import {
 export const SEMESTER_MIN = 1
 export const SEMESTER_MAX = 14
 
-/** Isian form apa adanya: kolom yang dikosongkan bernilai null */
 export type DataDiriFormValues = { [K in keyof DataDiriInput]: DataDiriInput[K] | null }
 
-/** Ubah FormData dari form Data Diri menjadi objek bertipe */
 export function parseDataDiriForm(formData: FormData): DataDiriFormValues {
   const get = (key: keyof DataDiriInput) => String(formData.get(key) ?? '').trim() || null
   const toNumber = (value: string | null) => (value === null ? null : Number(value))
@@ -24,17 +22,12 @@ export function parseDataDiriForm(formData: FormData): DataDiriFormValues {
     nim: get('nim'),
     jenisKelamin: get('jenisKelamin') as JenisKelamin | null,
     programStudi: get('programStudi') as ProgramStudi | null,
-    // Backend membulatkan IPK ke 2 desimal; samakan agar perbandingan perubahan akurat
     ipk: ipk === null ? null : Math.round(ipk * 100) / 100,
     semester: toNumber(get('semester')),
     nomorHp: get('nomorHp'),
   }
 }
 
-/**
- * Kolom yang perlu dikirim ke backend: terisi dan berbeda dari data tersimpan.
- * Kolom yang dibiarkan kosong tidak dikirim (backend menolak null).
- */
 export function perubahanDataDiri(awal: DataDiri, values: DataDiriFormValues): Partial<DataDiriInput> {
   const changes: Partial<DataDiriInput> = {}
   for (const key of Object.keys(values) as Array<keyof DataDiriFormValues>) {
@@ -44,9 +37,7 @@ export function perubahanDataDiri(awal: DataDiri, values: DataDiriFormValues): P
   return changes
 }
 
-/** Validasi ulang di sisi action (validasi native browser bisa dilewati) */
 export function validateDataDiri(awal: DataDiri, values: DataDiriFormValues): string | null {
-  // Data yang sudah tersimpan hanya bisa diganti, tidak bisa dikosongkan
   const dikosongkan = (Object.keys(values) as Array<keyof DataDiriFormValues>).some(
     (key) => values[key] === null && awal[key] !== null,
   )

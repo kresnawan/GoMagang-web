@@ -15,20 +15,12 @@ import { getPeriode } from '../../../services/periode'
 import { getPerusahaan } from '../../../services/perusahaan'
 import { parsePendaftarParams } from './params'
 
-/** Alamat action halaman ini (route index), untuk fetcher.submit dari dialog Detail */
 export const PENDAFTAR_ACTION = '/panitia-magang/pendaftar?index'
 
 export const INTENT = { jadwal: 'jadwal', plotting: 'plotting' } as const
 
-/** id route induk `pendaftar` (dipakai useRouteLoaderData) */
 export const REFERENSI_ROUTE_ID = 'panitia-magang-pendaftar'
 
-/**
- * Loader route induk: data referensi untuk dropdown filter & dialog Detail (periode, perusahaan, posisi).
- * Dipisah dari loader daftar supaya tidak ikut dimuat ulang setiap pencarian/filter/halaman berubah.
- * GET /api/v1/posisi hanya mengirim satu periode, jadi posisi diambil per periode secara paralel. Posisi yang
- * disembunyikan ikut diambil, supaya pendaftaran lama di posisi itu tetap bisa disaring
- */
 export async function referensiLoader({ request }: LoaderFunctionArgs) {
   const [periode, perusahaan] = await Promise.all([getPeriode(request.signal), getPerusahaan(request.signal)])
   const posisiPerPeriode = await Promise.all(
@@ -37,16 +29,10 @@ export async function referensiLoader({ request }: LoaderFunctionArgs) {
   return { periode, perusahaan, posisi: posisiPerPeriode.flat() }
 }
 
-/**
- * Periode & perusahaan tidak berubah oleh apa pun di halaman ini (cari, filter, pindah halaman, ubah status,
- * simpan jadwal), jadi tidak dimuat ulang. Pengecualian: revalidasi manual tanpa pindah URL, mis. tombol
- * "Coba lagi" saat gagal memuat. Saat masuk lagi dari menu lain, loader tetap dijalankan (route baru dipasang)
- */
 export function shouldRevalidateReferensi({ currentUrl, nextUrl, formMethod, defaultShouldRevalidate }: ShouldRevalidateFunctionArgs) {
   return !formMethod && currentUrl.href === nextUrl.href ? defaultShouldRevalidate : false
 }
 
-/** Loader daftar: hanya pendaftar. Query URL halaman = query backend; pencarian, filter, & pagination di backend */
 export async function loader({ request }: LoaderFunctionArgs) {
   const query = parsePendaftarParams(new URL(request.url).searchParams)
   const hasil = await getHalamanPendaftar(query, request.signal)
@@ -55,7 +41,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 const gagal = (error: string, status: number) => data({ ok: false as const, error }, { status })
 
-/** Id pendaftar dari field `ids` (boleh berulang); null bila ada yang bukan bilangan bulat positif */
 function parseIds(formData: FormData): number[] | null {
   const ids = formData.getAll('ids').map((value) => Number(value))
   return ids.every((id) => Number.isSafeInteger(id) && id > 0) ? [...new Set(ids)] : null
@@ -110,7 +95,6 @@ async function plotting(formData: FormData, signal: AbortSignal) {
   }
 }
 
-/** Setelah berhasil, daftar & dialog Detail yang terbuka dimuat ulang otomatis (revalidasi) */
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData()
   switch (formData.get('intent')) {

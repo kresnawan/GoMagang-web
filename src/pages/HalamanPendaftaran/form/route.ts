@@ -9,7 +9,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   const [posisi, riwayat, templatSpDpa] = await Promise.all([
     getPosisi(Number(params.lowonganId), request.signal),
     getRiwayatPendaftaran(request.signal),
-    // Hanya pelengkap: bila gagal dimuat, form tetap bisa dipakai tanpa link templat
     getTemplatSpDpa(request.signal).catch(() => null),
   ])
   if (!posisi) throw data('Lowongan tidak ditemukan', { status: 404 })
@@ -19,7 +18,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData()
 
-  // Validasi ulang (validasi di form bisa dilewati); isi PDF diperiksa lagi oleh backend
   const error = validatePendaftaranForm(formData)
   if (error) return data({ ok: false as const, error }, { status: 400 })
 

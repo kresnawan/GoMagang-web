@@ -1,5 +1,3 @@
-// Data diri mahasiswa yang sedang login: GET & PATCH /api/v1/mahasiswa/data.
-
 import { api } from './http'
 
 export const JENIS_KELAMIN = ['Laki-laki', 'Perempuan'] as const
@@ -14,10 +12,6 @@ export const PROGRAM_STUDI = [
 ] as const
 export type ProgramStudi = (typeof PROGRAM_STUDI)[number]
 
-/**
- * Data diri dari backend. Kolom bisa null saat mahasiswa belum pernah mengisinya
- * (login pertama hanya membuat baris kosong).
- */
 export type DataDiri = {
   namaLengkap: string | null
   nim: string | null
@@ -29,12 +23,10 @@ export type DataDiri = {
   nomorHp: string | null
 }
 
-/** Field yang dikirim saat menyimpan (email dikunci); semuanya wajib diisi */
 export type DataDiriInput = {
   [K in Exclude<keyof DataDiri, 'email'>]: NonNullable<DataDiri[K]>
 }
 
-/** Label kolom data diri, dipakai untuk pesan ke pengguna */
 export const LABEL_DATA_DIRI: Record<keyof DataDiriInput, string> = {
   namaLengkap: 'Nama Lengkap',
   nim: 'NIM',
@@ -45,14 +37,12 @@ export const LABEL_DATA_DIRI: Record<keyof DataDiriInput, string> = {
   nomorHp: 'Nomor HP',
 }
 
-/** Label kolom yang belum diisi; array kosong = data diri sudah lengkap */
 export function kolomBelumDiisi(data: DataDiri): string[] {
   return (Object.keys(LABEL_DATA_DIRI) as Array<keyof DataDiriInput>)
     .filter((key) => data[key] === null)
     .map((key) => LABEL_DATA_DIRI[key])
 }
 
-/** Bentuk response GET /api/v1/mahasiswa/data */
 type MahasiswaResponse = {
   nim: string | null
   email: string
@@ -67,7 +57,7 @@ type MahasiswaResponse = {
 export const JENIS_KELAMIN_DARI_KODE: Record<string, JenisKelamin> = { L: 'Laki-laki', P: 'Perempuan' }
 const KODE_JENIS_KELAMIN: Record<JenisKelamin, 'L' | 'P'> = { 'Laki-laki': 'L', Perempuan: 'P' }
 
-const ENDPOINT = '/api/v1/mahasiswa/data'
+const ENDPOINT = '/mahasiswa/data'
 
 const isProgramStudi = (value: string | null): value is ProgramStudi =>
   (PROGRAM_STUDI as readonly (string | null)[]).includes(value)
@@ -78,7 +68,6 @@ function toDataDiri(res: MahasiswaResponse): DataDiri {
     nim: res.nim,
     email: res.email,
     jenisKelamin: (res.jenis_kelamin && JENIS_KELAMIN_DARI_KODE[res.jenis_kelamin]) || null,
-    // Nilai di luar daftar dianggap belum diisi, agar dropdown tidak diam-diam memilih opsi pertama
     programStudi: isProgramStudi(res.program_studi) ? res.program_studi : null,
     ipk: res.ipk,
     semester: res.semester,
@@ -91,7 +80,6 @@ export async function getDataDiri(signal?: AbortSignal): Promise<DataDiri> {
   return toDataDiri(data)
 }
 
-/** Body PATCH: nama kolom backend, nilai tidak boleh null */
 type MahasiswaPatch = Partial<{
   nim: string
   nama: string
@@ -114,10 +102,6 @@ function toPatch(changes: Partial<DataDiriInput>): MahasiswaPatch {
   return body
 }
 
-/**
- * Simpan HANYA kolom yang berubah (field yang tidak dikirim tidak diubah backend).
- * Error 409/422 membawa `message` yang bisa langsung ditampilkan (lihat pesanError).
- */
 export async function updateDataDiri(changes: Partial<DataDiriInput>, signal?: AbortSignal): Promise<DataDiri> {
   const { data } = await api.patch<MahasiswaResponse>(ENDPOINT, toPatch(changes), { signal })
   return toDataDiri(data)

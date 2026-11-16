@@ -3,7 +3,6 @@ import { Button, buttonClass } from '../../component'
 import logoIkon from '../../assets/gomagang-logo-icon_only.svg'
 import { ALLOWED_EMAIL_DOMAIN, GOOGLE_LOGIN_URL, loginErrorMessage } from '../../services/auth'
 
-/** Logo "G" Google; ditaruh di kotak putih agar warnanya tetap sesuai pedoman merek Google */
 function GoogleIcon() {
   return (
     <span className="flex size-6 shrink-0 items-center justify-center rounded-sm bg-white" aria-hidden>
@@ -34,7 +33,6 @@ export function HalamanLogin() {
         )}
 
         {GOOGLE_LOGIN_URL ? (
-          // Navigasi penuh ke halaman pilih akun Google (bukan route React)
           <a href={GOOGLE_LOGIN_URL} className={buttonClass('fill', 'w-full gap-3 px-4')}>
             <GoogleIcon />
             Login menggunakan Akun UB

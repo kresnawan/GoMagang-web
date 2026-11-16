@@ -1,14 +1,17 @@
 const tanggalFormat = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+const jamFormat = new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
 const relatifFormat = new Intl.RelativeTimeFormat('id-ID', { numeric: 'auto' })
 
 const MENIT = 60_000
 const JAM = 60 * MENIT
 const HARI = 24 * JAM
 
-/** Tanggal lengkap, mis. "11 November 2026" */
 export const formatTanggal = (iso: string) => tanggalFormat.format(new Date(iso))
 
-/** Waktu relatif dari sekarang, mis. "3 hari yang lalu"; lebih dari 30 hari memakai tanggal lengkap */
+export const formatJam = (iso: string) => jamFormat.format(new Date(iso)).replace('.', ':')
+
+export const formatTanggalJam = (iso: string) => `${formatTanggal(iso)}, ${formatJam(iso)}`
+
 export function formatRelatif(iso: string, sekarang = Date.now()) {
   const selisih = new Date(iso).getTime() - sekarang
   const abs = Math.abs(selisih)

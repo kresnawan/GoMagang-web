@@ -11,7 +11,6 @@ import { INTENT, type action, type loader } from './route'
 const JUDUL = 'Perusahaan Mitra'
 const SUBJUDUL = 'Daftar perusahaan tempat mahasiswa dapat magang.'
 
-/** Pesan error dari action, dipakai semua dialog */
 function PesanError({ result }: { result: { ok: false; error: string } | { ok: true } | undefined }) {
   if (!result || result.ok) return null
   return (
@@ -21,7 +20,6 @@ function PesanError({ result }: { result: { ok: false; error: string } | { ok: t
   )
 }
 
-/** Dipasang hanya saat dibuka, sehingga form selalu mulai kosong */
 function TambahPerusahaanDialog({ onClose }: { onClose: () => void }) {
   const fetcher = useFetcher<typeof action>()
   const isSaving = fetcher.state !== 'idle'
@@ -52,7 +50,6 @@ function TambahPerusahaanDialog({ onClose }: { onClose: () => void }) {
   )
 }
 
-/** Form ubah nama, diisi nama saat ini. Dipasang hanya saat dibuka */
 function UbahNamaDialog({ perusahaan, onClose }: { perusahaan: Perusahaan; onClose: () => void }) {
   const fetcher = useFetcher<typeof action>()
   const isSaving = fetcher.state !== 'idle'
@@ -87,7 +84,6 @@ function UbahNamaDialog({ perusahaan, onClose }: { perusahaan: Perusahaan; onClo
   )
 }
 
-/** Konfirmasi menyembunyikan perusahaan. Dipasang hanya saat dibuka */
 function SembunyikanDialog({ perusahaan, onClose }: { perusahaan: Perusahaan; onClose: () => void }) {
   const fetcher = useFetcher<typeof action>()
   const isSaving = fetcher.state !== 'idle'
@@ -169,7 +165,6 @@ function TabelAktif({ perusahaan, onPilih }: { perusahaan: Perusahaan[]; onPilih
   )
 }
 
-/** Perusahaan yang disembunyikan, hanya tampil setelah teks pembukanya diklik */
 function BagianDisembunyikan({ perusahaan }: { perusahaan: Perusahaan[] }) {
   const [terbuka, setTerbuka] = useState(false)
 

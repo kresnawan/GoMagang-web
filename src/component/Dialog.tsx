@@ -9,11 +9,9 @@ export type DialogProps = {
   children: ReactNode
   onClose: () => void
   closeLabel?: string
-  /** Kelas tambahan untuk <dialog>, mis. lebar maksimum */
   className?: string
 }
 
-/** Dialog modal untuk menampilkan informasi; ditutup lewat tombol atau Esc */
 export function Dialog({ open, title, children, onClose, closeLabel = 'Tutup', className }: DialogProps) {
   const dialogRef = useModalDialog(open)
   const titleId = useId()

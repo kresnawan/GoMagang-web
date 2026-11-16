@@ -14,7 +14,6 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-/** Section kiri: data pendaftaran (read-only) */
 export function DetailPendaftaran({ pendaftaran }: { pendaftaran: PendaftaranDetail }) {
   return (
     <section aria-label="Detail pendaftaran" className="rounded-sm border border-brand-300 p-5 sm:p-6">

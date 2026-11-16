@@ -10,11 +10,9 @@ export type TambahMkDialogProps = {
   onClose: () => void
   idPendaftaran: string
   mataKuliah: MataKuliahKonversi[]
-  /** id MK yang sudah ada di tabel; ditampilkan tapi tidak bisa dipilih */
   idSudahDipilih: ReadonlySet<string>
 }
 
-/** Dialog pilih 1 MK + pencarian. Isi dirender ulang setiap dialog dibuka agar pilihan & pencarian bersih */
 export function TambahMkDialog({ open, onClose, idPendaftaran, mataKuliah, idSudahDipilih }: TambahMkDialogProps) {
   const fetcher = useFetcher<typeof action>()
   const [cari, setCari] = useState('')
@@ -23,7 +21,6 @@ export function TambahMkDialog({ open, onClose, idPendaftaran, mataKuliah, idSud
   const isSaving = fetcher.state !== 'idle'
   const error = fetcher.state === 'idle' && fetcher.data && !fetcher.data.ok ? fetcher.data.error : null
 
-  // Berhasil tersimpan: tutup dialog (tabel ikut terbarui lewat revalidasi loader)
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data?.ok) onClose()
   }, [fetcher.state, fetcher.data, onClose])

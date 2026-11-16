@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react'
 
-/** Sinkronkan prop `open` dengan <dialog> native (showModal/close). Kembalikan ref untuk <dialog> */
 export function useModalDialog(open: boolean) {
   const dialogRef = useRef<HTMLDialogElement>(null)
 

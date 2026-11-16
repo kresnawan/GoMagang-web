@@ -8,7 +8,6 @@ function PageHeading() {
   return <h1 className="mb-8 text-h5 text-brand-700">Formulir Pendaftaran</h1>
 }
 
-/** Dibuka langsung lewat URL padahal tidak bisa mendaftar di sini (tombol Daftar di daftar lowongan nonaktif) */
 function TidakBisaDaftar({ alasan }: { alasan: string }) {
   return (
     <div role="status" className="max-w-3xl rounded-sm border border-brand-300 bg-brand-50 px-4 py-4 text-brand-700">
@@ -34,7 +33,6 @@ export function HalamanFormPendaftaran() {
   return (
     <>
       <PageHeading />
-      {/* Ringkasan lowongan yang dipilih */}
       <section
         aria-label="Lowongan dipilih"
         className="mb-8 flex max-w-3xl flex-col gap-4 rounded-lg border border-brand-300 p-3 sm:flex-row sm:items-center sm:gap-6"

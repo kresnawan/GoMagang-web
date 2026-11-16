@@ -13,7 +13,6 @@ export const INTENT_KONFIRMASI = 'konfirmasi'
 
 const gagal = (error: string, status: number) => data({ ok: false as const, error }, { status })
 
-/** Konfirmasi penerimaan; setelah berhasil, loader memuat ulang detail (status menjadi Aktif) */
 export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData()
   if (formData.get('intent') !== INTENT_KONFIRMASI) return gagal('Aksi tidak dikenal.', 400)

@@ -13,20 +13,16 @@ const SEARCH_DELAY = 600
 type FilterPendaftarProps = {
   periode: Periode[]
   perusahaan: Perusahaan[]
-  /** Posisi dari semua periode */
   posisi: Posisi[]
 }
 
-/** Posisi termasuk dalam periode & perusahaan yang sedang dipilih (null/'' = semua) */
 const posisiCocok = (item: Posisi, idPeriode: string | null, idPerusahaan: string | null) =>
   (!idPeriode || String(item.idPeriode) === idPeriode) && (!idPerusahaan || String(item.idPerusahaan) === idPerusahaan)
 
-/** Cari nama + filter periode, status, perusahaan, posisi. Langsung diterapkan; nilainya disimpan di URL */
 export function FilterPendaftar({ periode, perusahaan, posisi }: FilterPendaftarProps) {
   const [searchParams, setSearchParams] = useSearchParams()
   const timerRef = useRef<number>(undefined)
 
-  // Pilihan posisi mengikuti periode & perusahaan yang dipilih, dikelompokkan per periode
   const idPeriode = searchParams.get(PARAM.periode)
   const idPerusahaan = searchParams.get(PARAM.perusahaan)
   const grupPosisi = periode
@@ -49,20 +45,18 @@ export function FilterPendaftar({ periode, perusahaan, posisi }: FilterPendaftar
           if (value) next.set(key, value)
           else next.delete(key)
         }
-        // Posisi yang tidak termasuk periode/perusahaan baru dilepas, agar daftarnya tidak kosong tanpa alasan
         const idPosisi = next.get(PARAM.posisi)
         const item = posisi.find((p) => String(p.id) === idPosisi)
         if (idPosisi && !(item && posisiCocok(item, next.get(PARAM.periode), next.get(PARAM.perusahaan)))) {
           next.delete(PARAM.posisi)
         }
-        next.delete(PARAM.p) // filter baru → kembali ke halaman 1
+        next.delete(PARAM.p)
         return next
       },
       { replace: true },
     )
   }
 
-  // Ketik: tunggu sebentar agar tidak memanggil backend tiap huruf. Dropdown: langsung
   function handleChange(event: FormEvent<HTMLFormElement>) {
     const form = event.currentTarget
     const isTyping = (event.target as HTMLElement).tagName === 'INPUT'

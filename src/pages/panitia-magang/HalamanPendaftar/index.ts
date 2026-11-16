@@ -10,7 +10,6 @@ export const pendaftarRoute = {
   action,
 } satisfies Omit<RouteObject, 'path' | 'index' | 'children'>
 
-/** Route induk `pendaftar`: memuat periode & perusahaan sekali, dipakai halaman daftar lewat useRouteLoaderData */
 export const pendaftarLayoutRoute = {
   id: REFERENSI_ROUTE_ID,
   loader: referensiLoader,

@@ -6,19 +6,12 @@ import { DPM_TEKS_MAX, validasiPlottingDpm, type PendaftarRingkas } from '../../
 import { INTENT, PENDAFTAR_ACTION, type action } from './route'
 
 export type PlottingDpmDialogProps = {
-  /** Satu (dari dialog Detail) atau banyak (aksi massal); semuanya berstatus Aktif */
   pendaftar: Array<Pick<PendaftarRingkas, 'id' | 'nama' | 'nim'>>
-  /** Plotting yang sudah ada, untuk mengisi form (hanya bila satu pendaftar) */
   plottingAwal?: PlottingDpm | null
   onClose: () => void
-  /** Dipanggil setelah tersimpan, sebelum dialog ditutup */
   onSuccess?: () => void
 }
 
-/**
- * Form plotting DPM untuk satu atau banyak pendaftar (PUT /api/v1/pendaftaran/plot-dpm).
- * Dipasang hanya saat dibuka, sehingga form & pesan error selalu mulai dari awal
- */
 export function PlottingDpmDialog({ pendaftar, plottingAwal = null, onClose, onSuccess }: PlottingDpmDialogProps) {
   const fetcher = useFetcher<typeof action>()
   const [errorLokal, setErrorLokal] = useState<string | null>(null)
